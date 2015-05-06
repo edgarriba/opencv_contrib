@@ -33,68 +33,74 @@
  *
  */
 
-#ifndef __OPENCV_CONDITIONING_HPP__
-#define __OPENCV_CONDITIONING_HPP__
+#include <opencv2/sfm/conditioning.hpp>
 
-#ifdef __cplusplus
-
-#include <opencv2/core.hpp>
+#include "libmv/multiview/conditioning.h"
+#include <opencv2/core/eigen.hpp>
 
 namespace cv
 {
 
-/** Point conditioning (non isotropic)
-    Reference: HZ2 4.4.4 pag.109
-*/
-CV_EXPORTS
 void
-preconditionerFromPoints( const Mat &points,
-                          Mat &T );
+preconditionerFromPoints( const Mat &_points,
+                          Mat &_Tr )
+{
+    libmv::Mat points;
+    libmv::Mat3 Tr;
 
-/** Point conditioning (isotropic)
-    Reference: HZ2 4.4.4 pag.107
-*/
-CV_EXPORTS
-void
-isotropicPreconditionerFromPoints( const Mat &points,
-                                    Mat &T );
+    cv2eigen( _points, points );
 
-/** Apply Transformation to points such that transformed_points = T * points
-*/
-CV_EXPORTS
-void
-applyTransformationToPoints( const Mat &points,
-                              const Mat &T,
-                              Mat &transformed_points );
+    libmv::PreconditionerFromPoints( points, &Tr );
 
-/** This function normalizes points (non isotropic)
-* @param X Input vector of N-dimensional points
-* @param x Output vector of the same N-dimensional points but with mean 0 and average norm sqrt(2)
-* @param T Output transform matrix such that x = T*X
-* Reference: HZ2 4.4.4 pag.109
-*/
-CV_EXPORTS
-void
-normalizePoints( const Mat &X,
-                  Mat &x,
-                  Mat &T );
+    eigen2cv( Tr, _Tr );
+}
 
-/** This function normalizes points (isotropic)
-* @param X Input vector of N-dimensional points
-* @param x Output vector of the same N-dimensional points but with mean 0 and average norm sqrt(2)
-* @param T Output transform matrix such that x = T*X
-* Reference: HZ2 4.4.4 pag.107
-*/
-CV_EXPORTS
 void
-normalizeIsotropicPoints( const Mat &X,
-                          Mat &x,
-                          Mat &T );
+isotropicPreconditionerFromPoints( const Mat &_points,
+                                   Mat &_T )
+{
+    libmv::Mat points;
+    libmv::Mat3 Tr;
+
+    cv2eigen( _points, points );
+
+    libmv::IsotropicPreconditionerFromPoints( points, &Tr );
+
+    eigen2cv( Tr, _T );
+}
+
+void
+applyTransformationToPoints( const Mat &_points,
+                             const Mat &_T,
+                             Mat &_transformed_points )
+{
+    libmv::Mat points, transformed_points;
+    libmv::Mat3 Tr;
+
+    cv2eigen( _points, points );
+    cv2eigen( _T, Tr );
+
+    libmv::ApplyTransformationToPoints( points, Tr, &transformed_points );
+
+    eigen2cv( transformed_points, _transformed_points );
+}
+
+void
+normalizePoints( const Mat &points,
+                 Mat &normalized_points,
+                 Mat &T )
+{
+    preconditionerFromPoints(points, T);
+    applyTransformationToPoints(points, T, normalized_points);
+}
+
+void
+normalizeIsotropicPoints( const Mat &points,
+                          Mat &normalized_points,
+                          Mat &T )
+{
+    isotropicPreconditionerFromPoints(points, T);
+    applyTransformationToPoints(points, T, normalized_points);
+}
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
-
-#endif
-
-/* End of file. */
