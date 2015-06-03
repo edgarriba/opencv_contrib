@@ -38,7 +38,7 @@
 
 #ifdef __cplusplus
 
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 #include "libmv/simple_pipeline/pipeline.h"
 #include "libmv/simple_pipeline/camera_intrinsics.h"
