@@ -1,22 +1,12 @@
-#include <opencv2/sfm/sfm.hpp>
-#include <opencv2/core/core.hpp>
+#include <opencv2/sfm.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/viz.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 
 #include "recon2v.hpp"
-
-// Used to display 3D structure using Qt widget
-#include <QApplication>
-#include <QtGui>
-#include <QtOpenGL>
-#include "glwidget.h"
-
-#ifdef __APPLE__
-    #include <OpenGL/glu.h>
-#else
-    #include <GL/glu.h>
-#endif
 
 using namespace std;
 using namespace cv;
@@ -28,7 +18,6 @@ static void help() {
 			<< " OpenCV Structure From Motion (SFM) module.\n"
 			<< " It uses the following data from the VGG datasets at ...\n"
 			<< " Usage:\n"
-//    << "       reconv2 view1_2D_pts.txt view2_2D_pts.txt\n"
 			<< "       reconv2 _pts.txt \n "
 			<< " where the first line has the number of points and each subsequent \n"
 			<< " line has entries for matched points as: \n"
@@ -37,8 +26,8 @@ static void help() {
 			<< endl;
 }
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv)
+{
 	// Do projective reconstruction
 	bool is_projective = true;
 
@@ -65,6 +54,7 @@ int main(int argc, char** argv) {
 			// Read number of points
 			getline(myfile, line);
 			npts = (int) atof(line.c_str());
+
 			x1 = Mat_<double>(2, npts);
 			x2 = Mat_<double>(2, npts);
 
@@ -102,36 +92,39 @@ int main(int argc, char** argv) {
 	reconstruct(points2d, Ps_estimated, points3d_estimated, is_projective,
 			has_outliers);
 
+
 	// Print output
 
 	cout << endl;
 	cout << "Projection Matrix of View 1: " << endl;
 	cout << "============================ " << endl;
 	cout << Ps_estimated[0] << endl << endl;
-	cout << "Projection Matrix of View 1: " << endl;
+	cout << "Projection Matrix of View 2: " << endl;
 	cout << "============================ " << endl;
 	cout << Ps_estimated[1] << endl << endl;
-	cout << "Reconstructed 3D points: " << endl;
-	cout << "======================== " << endl;
-	cout << points3d_estimated << endl;
 
-	// Display 3D points using Qt widget
 
-	// Create the structure
-	vector<Vec3f> struct_coords;
+	// Display 3D points using VIZ module
+
+	// Create the pointcloud
+	vector<Vec3f> point_cloud;
 	for (int i = 0; i < npts; ++i) {
 		Vec3f point3d((float) points3d_estimated(0, i),
 				(float) points3d_estimated(1, i),
 				(float) points3d_estimated(2, i));
-		struct_coords.push_back(point3d);
+		point_cloud.push_back(point3d);
 	}
 
-	// Qt stuff
-	QApplication app(argc, argv);
-	GLWidget window;
-	window.AddNewStructure(struct_coords);
-	window.resize(800, 600);
-	window.show();
-	return app.exec();
+	// Create a 3D window
+	viz::Viz3d myWindow("Coordinate Frame");
+  
+	/// Add coordinate axes
+	myWindow.showWidget("Coordinate Widget", viz::WCoordinateSystem());
 
+	viz::WCloud cloud_widget(point_cloud, viz::Color::green());
+  myWindow.showWidget("cloud", cloud_widget);
+  
+  myWindow.spin();
+
+  return 0;
 }
