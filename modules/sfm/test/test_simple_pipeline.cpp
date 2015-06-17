@@ -36,7 +36,7 @@
 #include "test_precomp.hpp"
 
 #include <opencv2/sfm/simple_pipeline.hpp>
-#include "third_party/ssba/Math/v3d_optimization.h"
+//#include "third_party/ssba/Math/v3d_optimization.h"
 #include "libmv/simple_pipeline/bundle.h"
 
 using namespace cv;
@@ -45,7 +45,7 @@ using namespace std;
 
 TEST(Sfm_simple_pipeline, backyard)
 {
-    V3D::optimizerVerbosenessLevel = 0; // less logging messages
+    //V3D::optimizerVerbosenessLevel = 0; // less logging messages
 
     // Get tracks from file: check backyard.blend file
     libmv::Tracks tracks;

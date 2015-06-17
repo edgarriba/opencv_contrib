@@ -1,22 +1,37 @@
 set(the_description "SFM algorithms")
 
-ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Werror=non-virtual-dtor -Wshadow -Wunused-parameter -Wsign-compare -Wmissing-declarations -Wunused-variable -Werror=sign-promo -Wsign-promo -Wunused-but-set-variable -Winvalid-pch)
+ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
+
+# needed since we are linking static libs
+set(CMAKE_CXX_FLAGS ${CMAKE_CSS_FLAGS} "-fPIC")
 
 set(LIBMV_LIGHT_INCLUDES
-	include
-  ./libmv_light
-	./libmv_light/third_party/gflags
-	./libmv_light/third_party/glog/src
-	./libmv_light/third_party/ssba
-	./libmv_light/third_party/ceres/include
+  src/libmv_light
+  src/libmv_light/third_party/gflags
+  src/libmv_light/third_party/glog/src
+  src/libmv_light/third_party/ssba
+  src/libmv_light/third_party/ceres/include
 )
 
-ocv_include_directories(${LIBMV_LIGHT_INCLUDES})
+set(LIBMV_LIGHT_LIBS
+  reconstruction
+  correspondence
+  camera
+  multiview
+  multiview_test_data
+  numeric
+  simple_pipeline
+)
 
-ocv_add_module(sfm opencv_core opencv_ts)
+
+### OPENCV SFM MODULE ###
+
+ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
+
+ocv_add_module(sfm opencv_core opencv_ts opencv_calib3d)
 
 # build libmv_light
-add_subdirectory(libmv_light)
+add_subdirectory(src/libmv_light)
 
 # source files
 FILE(GLOB OPENCV_SFM_SRC src/*.cpp)
@@ -24,35 +39,14 @@ FILE(GLOB OPENCV_SFM_SRC src/*.cpp)
 # define the header files (make the headers appear in IDEs.)
 FILE(GLOB OPENCV_SFM_HDRS include/opencv2/sfm/*.hpp)
 
-#ocv_add_library(opencv_sfm ${OPENCV_SFM_SRC} ${OPENCV_SFM_HDRS})
-
 ocv_set_module_sources( HEADERS ${OPENCV_SFM_HDRS} SOURCES ${OPENCV_SFM_SRC} )
 
 ocv_module_include_directories()
+ocv_create_module( ${LIBMV_LIGHT_LIBS} )
 
-ocv_create_module()
 
-ocv_target_link_libraries(opencv_sfm  ${OpenCV_LIBRARIES}
-                                  reconstruction
-                                  correspondence
-                                  camera
-                                  multiview
-                                  #multiview_test_data
-                                  numeric
-                                  simple_pipeline
-)
+### OPENCV SFM TESTS ###
 
-install(TARGETS opencv_sfm
-        DESTINATION lib
-)
+ADD_DEFINITIONS(-DTEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/testdata/cv/sfm/")
 
-install(DIRECTORY include/opencv2/sfm
-        DESTINATION include/opencv2
-        COMPONENT main
-)
-
-## TESTS ##
-
-ADD_DEFINITIONS(-DTEST_DATA_DIR="\\"${CMAKE_CURRENT_SOURCE_DIR}/testdata/cv/sfm/\\"")
-
-#ocv_add_accuracy_tests()
+ocv_add_accuracy_tests()
