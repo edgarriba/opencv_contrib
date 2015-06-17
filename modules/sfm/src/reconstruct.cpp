@@ -43,9 +43,8 @@
 #include <opencv2/calib3d.hpp>
 
 // libmv headers
-#include <libmv/reconstruction/reconstruction.h>
-#include <libmv/reconstruction/projective_reconstruction.h>
-#include <libmv/reconstruction/projective_reconstruction.h>
+#include "libmv/reconstruction/reconstruction.h"
+#include "libmv/reconstruction/projective_reconstruction.h"
 
 using namespace cv;
 using namespace libmv;

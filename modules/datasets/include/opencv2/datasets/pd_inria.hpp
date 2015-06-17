@@ -10,8 +10,7 @@
 //                           License Agreement
 //                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2015, Itseez Inc, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -30,7 +29,7 @@
 // This software is provided by the copyright holders and contributors "as is" and
 // any express or implied warranties, including, but not limited to, the implied
 // warranties of merchantability and fitness for a particular purpose are disclaimed.
-// In no event shall the Intel Corporation or contributors be liable for any direct,
+// In no event shall the Itseez Inc or contributors be liable for any direct,
 // indirect, incidental, special, exemplary, or consequential damages
 // (including, but not limited to, procurement of substitute goods or services;
 // loss of use, data, or profits; or business interruption) however caused
@@ -40,13 +39,58 @@
 //
 //M*/
 
-#ifndef __OPENCV_XPHOTO_HPP__
-#define __OPENCV_XPHOTO_HPP__
+#ifndef OPENCV_DATASETS_PD_INRIA_HPP
+#define OPENCV_DATASETS_PD_INRIA_HPP
 
-/** @defgroup xphoto Additional photo processing algorithms
-*/
+#include <string>
+#include <vector>
 
-#include "xphoto/inpainting.hpp"
-#include "xphoto/white_balance.hpp"
-#include "xphoto/dct_image_denoising.hpp"
+#include "opencv2/datasets/dataset.hpp"
+
+#include <opencv2/core.hpp>
+
+namespace cv
+{
+namespace datasets
+{
+
+//! @addtogroup datasets_pd
+//! @{
+
+enum sampleType 
+{
+    POS = 0,
+    NEG = 1
+};
+
+struct PD_inriaObj : public Object
+{
+    // image file name
+    std::string filename;
+    
+    // positive or negative
+    sampleType sType;
+
+    // image size
+    int width;
+    int height;
+    int depth;
+
+    // bounding boxes
+    std::vector< Rect > bndboxes;
+};
+
+class CV_EXPORTS PD_inria : public Dataset
+{
+public:
+    virtual void load(const std::string &path) = 0;
+
+    static Ptr<PD_inria> create();
+};
+
+//! @}
+
+}
+}
+
 #endif
