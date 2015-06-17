@@ -10,8 +10,7 @@
 //                           License Agreement
 //                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2015, Itseez Inc, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -30,7 +29,7 @@
 // This software is provided by the copyright holders and contributors "as is" and
 // any express or implied warranties, including, but not limited to, the implied
 // warranties of merchantability and fitness for a particular purpose are disclaimed.
-// In no event shall the Intel Corporation or contributors be liable for any direct,
+// In no event shall the Itseez Inc or contributors be liable for any direct,
 // indirect, incidental, special, exemplary, or consequential damages
 // (including, but not limited to, procurement of substitute goods or services;
 // loss of use, data, or profits; or business interruption) however caused
@@ -40,13 +39,56 @@
 //
 //M*/
 
-#ifndef __OPENCV_XPHOTO_HPP__
-#define __OPENCV_XPHOTO_HPP__
+#include "opencv2/datasets/pd_inria.hpp"
+#include <opencv2/core.hpp>
 
-/** @defgroup xphoto Additional photo processing algorithms
-*/
+#include <iostream>
+#include <string>
+#include <vector>
 
-#include "xphoto/inpainting.hpp"
-#include "xphoto/white_balance.hpp"
-#include "xphoto/dct_image_denoising.hpp"
-#endif
+using namespace std;
+using namespace cv;
+using namespace cv::datasets;
+
+int main(int argc, char *argv[])
+{
+    const char *keys =
+            "{ help h usage ? |    | show this message }"
+            "{ path p         |true| path to dataset }";
+    CommandLineParser parser(argc, argv, keys);
+    string path(parser.get<string>("path"));
+    if (parser.has("help") || path=="true")
+    {
+        parser.printMessage();
+        return -1;
+    }
+
+    Ptr<PD_inria> dataset = PD_inria::create();
+    dataset->load(path);
+
+    cout << "train size: " << (unsigned int)dataset->getTrain().size() << endl;
+
+    PD_inriaObj *example = static_cast<PD_inriaObj *>(dataset->getTrain()[0].get());
+    cout << "first train object: " << endl;
+    cout << "name: " << example->filename << endl;
+    
+    // image size
+    cout << "image size: " << endl;
+    cout << "  - width: " << example->width << endl;
+    cout << "  - height: " << example->height << endl;
+    cout << "  - depth: " << example->depth << endl;
+
+    // bounding boxes
+    for (unsigned int i = 0; i < (example->bndboxes).size(); i++)
+    {
+        cout << "object " << i << endl;
+        int x = (example->bndboxes)[i].x;
+        int y = (example->bndboxes)[i].y;
+        cout << "  - xmin = " << x  << endl;
+        cout << "  - ymin = " << y << endl;
+        cout << "  - xmax = " << (example->bndboxes)[i].width + x << endl;
+        cout << "  - ymax = " << (example->bndboxes)[i].height + y<< endl;
+    }
+
+    return 0;
+}
