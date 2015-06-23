@@ -5,6 +5,9 @@ ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
 # needed since we are linking static libs
 set(CMAKE_CXX_FLAGS ${CMAKE_CSS_FLAGS} "-fPIC")
 
+
+### LIBMV LIGHT DEFINITIONS ###
+  
 set(LIBMV_LIGHT_INCLUDES
   src/libmv_light
   src/libmv_light/third_party/gflags
@@ -24,11 +27,19 @@ set(LIBMV_LIGHT_LIBS
 )
 
 
-### OPENCV SFM MODULE ###
+### CHECK OPENCV SFM MODULE DEPENDENCIES ###
 
-ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
+set(OPENCV_SFM_DEPS opencv_core opencv_ts opencv_calib3d opencv_features2d)
 
-ocv_add_module(sfm opencv_core opencv_ts opencv_calib3d)
+ocv_check_dependencies(${OPENCV_SFM_DEPS})
+ocv_include_directories("${OpenCV_SOURCE_DIR}/include/opencv")
+ocv_include_modules_recurse(${OPENCV_SFM_DEPS})
+
+
+### CREATE OPENCV SFM MODULE ###
+
+ocv_add_module(sfm ${OPENCV_SFM_DEPS})
+ocv_include_directories( ${LIBMV_LIGHT_INCLUDES})
 
 # build libmv_light
 add_subdirectory(src/libmv_light)
@@ -50,4 +61,8 @@ ocv_create_module( ${LIBMV_LIGHT_LIBS} )
 ADD_DEFINITIONS(-DTEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/testdata/cv/sfm/")
 
 ocv_add_accuracy_tests()
+
+
+### OPENCV SFM SAMPLES ###
+
 ocv_add_samples(opencv_viz)
