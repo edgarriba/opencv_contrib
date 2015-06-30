@@ -142,19 +142,22 @@ generateScene(const size_t n_views, const size_t n_points, const bool is_project
 
   cv::RNG rng;
 
+  const float size_scene = 10.0f;
+  const float offset_scene = 5.0f;
+
   // Generate a bunch of random 3d points in a 0, 1 cube
   points3d.create(3, n_points);
-  rng.fill(points3d, cv::RNG::UNIFORM, 0, 10);
+  rng.fill(points3d, cv::RNG::UNIFORM, offset_scene, size_scene + offset_scene);
 
   // Generate random intrinsics
   K = Matx33d(500,   0, 320,
                 0, 500, 240,
                 0,   0,   1);
 
-  float r = 10.0f;
-  float cx = r/2.0f;
-  float cy = r/2.0f;
-  float cz = r/2.0f;
+  float r = size_scene;
+  float cx = r/2.0f + offset_scene;
+  float cy = r/2.0f + offset_scene;
+  float cz = r/2.0f + offset_scene;
   int num_segments = n_views;
 
   for(int ii = 0; ii < num_segments; ii++)
