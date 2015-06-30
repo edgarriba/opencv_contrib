@@ -88,10 +88,8 @@ int main(int argc, char** argv)
 	points2d.push_back(x2);
 	Mat_<double> points3d_estimated;
 	vector < Mat > Ps_estimated;
-    Matx33d K_estimated;
 
-	reconstruct(points2d, Ps_estimated, K_estimated, points3d_estimated, is_projective,
-			has_outliers);
+	reconstruct(points2d, Ps_estimated, points3d_estimated, is_projective, has_outliers);
 
 
 	// Print output

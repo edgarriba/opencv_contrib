@@ -59,7 +59,6 @@ namespace cv
    * @param points2d a vector of vectors of 2d points (the inner vector is per image)
    * @param projection_matrices The 3 x 4 projections matrices of each image
    * @param points3d the 3d points
-   * @param has_outliers if true, the correspondences are not trusted
    */
   CV_EXPORTS
   void
@@ -76,8 +75,8 @@ namespace cv
    */
   CV_EXPORTS
   void
-  reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, InputOutputArray K,
-              OutputArray points3d, bool is_projective = false, bool has_outliers = false, bool is_sequence = false);
+  reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, OutputArray points3d,
+    bool is_projective = false, bool has_outliers = false, bool is_sequence = false);
 
   /** @brief Reconstruct 3d points from 2d correspondences while performing autocalibration.
    * @param points2d a vector of vectors of 2d points (the inner vector is per image)

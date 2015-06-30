@@ -79,7 +79,7 @@ TEST(Sfm_reconstruct, twoViewProjectiveOutliers)
 
     Mat_<double> points3d_estimated;
     vector<Mat> Ps_estimated;
-    reconstruct(points2d, Ps_estimated, K, points3d_estimated, is_projective, has_outliers);
+    reconstruct(points2d, Ps_estimated, points3d_estimated, is_projective, has_outliers);
 
     /* Check projection errors on GT */
     check_projection_errors(points3d, Ps, points2d, err_max2d);

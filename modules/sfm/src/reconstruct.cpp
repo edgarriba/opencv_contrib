@@ -58,8 +58,8 @@ namespace cv
 
   //  Reconstruction function for API
   void
-  reconstruct(const InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, InputOutputArray K,
-              OutputArray points3d, bool is_projective, bool has_outliers, bool is_sequence)
+  reconstruct(const InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, OutputArray points3d,
+    bool is_projective, bool has_outliers, bool is_sequence)
   {
     const int nviews = points2d.total();
     Matx33d F;
@@ -143,7 +143,7 @@ namespace cv
     if (nviews == 2)
     {
       std::vector < Mat > Ps_estimated;
-      reconstruct(points2d, Ps_estimated, K, points3d, is_projective, has_outliers, is_sequence);
+      reconstruct(points2d, Ps_estimated, points3d, is_projective, has_outliers, is_sequence);
 
       for(unsigned int i = 0; i < nviews; ++i)
       {
