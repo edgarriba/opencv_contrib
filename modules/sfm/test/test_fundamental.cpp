@@ -173,4 +173,3 @@ TEST(Sfm_fundamental, motionFromEssentialChooseSolution)
     EXPECT_LE(norm(Rs[solution]-R), 1e-8);
     EXPECT_LE(norm(ts[solution]-t), 1e-8);
 }
-
