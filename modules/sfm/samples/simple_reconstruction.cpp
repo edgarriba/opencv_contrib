@@ -4,13 +4,27 @@
 #include <opencv2/core.hpp>
 
 #include <iostream>
-#include <sstream>
 
 using namespace std;
 using namespace cv;
 
+static void help() {
+  cout
+      << "\n----------------------------------------------------------------------------------\n"
+      << " This program shows the multiview reconstruction capabilities in the \n"
+      << " OpenCV Structure From Motion (SFM) module.\n"
+      << " It generates a scene with synthetic data to then reconstruct it \n"
+      << " from the 2D correspondences.\n"
+      << " Usage:\n"
+      << "       example_sfm_simple_reconstruction [<nCameras>] [<nPoints>] \n"
+      << " where nCameras is the number of cameras to generate in the scene (default: 20) \n"
+      << "       nPoints is the number of 3D points to generate in the scene (default: 500) \n"
+      << "----------------------------------------------------------------------------------\n\n"
+      << endl;
+}
+
 void
-generateScene(const size_t n_views, const size_t n_points, const bool is_projective, Matx33d & K, vector<Matx33d> & R,
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<Matx33d> & R,
               vector<Vec3d> & t, vector<Matx34d> & P, Mat_<double> & points3d,
               vector<Mat_<double> > & points2d );
 
@@ -19,22 +33,23 @@ parser_2D_tracks( const vector<Mat_<double> > &points2d, libmv::Tracks &tracks )
 
 int main(int argc, char* argv[])
 {
-  float err_max2d = 1e-7;
   int nviews = 20;
   int npoints = 500;
-  bool is_projective = true;
-  bool has_outliers = false;
-  bool is_sequence = true;
 
   // read input parameters
-  if ( argc > 1)
+  if ( argc > 1 )
   {
-    nviews = atoi(argv[1]);
+    if ( string(argv[1]).compare("-h") == 0 ||
+         string(argv[1]).compare("--help") == 0 )
+    {
+      help();
+      exit(0);
+    }
+    else
+      nviews = atoi(argv[1]);
 
     if ( argc > 2 )
-    {
-        npoints = atoi(argv[2]);
-    }
+      npoints = atoi(argv[2]);
   }
 
   vector< Mat_<double> > points2d;
@@ -45,36 +60,60 @@ int main(int argc, char* argv[])
   Mat_<double> points3d;
 
   /// Generate ground truth scene
-  cout << "Generating scene" << endl;
-  generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d,
-    points2d);
-
-  cout << "Reconstructing scene" << endl;
+  generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
 
   /// Reconstruct the scene using the 2d correspondences
+  Matx33d K_ = K;
+  vector<Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
-  vector<Mat> Rs_est;
-  vector<Mat> ts_est;
-  //reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective, has_outliers, is_sequence);
+  const bool is_projective = true;
+  const bool has_outliers = false;
+  const bool is_sequence = true;
+  reconstruct(points2d, Rs_est, ts_est, K_, points3d_estimated, is_projective, has_outliers, is_sequence);
 
-  vector< Mat > Ps_est;
-  Matx33d K_est;
-  vector< Mat_<double> > points2d_;
-  points2d_.push_back(points2d[0]);
-  points2d_.push_back(points2d[1]);
-  reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective, has_outliers, is_sequence);
 
+  // Print output
+
+  cout << "\n----------------------------\n" << endl;
+  cout << "Generated Scene: " << endl;
+  cout << "============================" << endl;
+  cout << "Generated 3D points: " << npoints << endl;
+  cout << "Generated cameras: " << nviews << endl;
+  cout << "Initial intrinsics: " << endl << K << endl << endl;
+  cout << "Reconstruction: " << endl;
+  cout << "============================" << endl;
+  cout << "Estimated 3D points: " << points3d_estimated.cols << endl;
+  cout << "Estimated cameras: " << Rs_est.size() << endl;
+  cout << "Refined intrinsics: " << endl << K_ << endl << endl;
+
+
+  /// Compute the orientation and the scale between pointclouds
+  Matx33d R_rel;
+  Vec3d t_rel;
+  double s_rel;
+  //computeOrientation(points3d, points3d_estimated, R_rel, t_rel, s_rel);
+
+
+  cout << "3D Visualization: " << endl;
+  cout << "============================" << endl;
 
   /// Create 3D windows
+
   viz::Viz3d window_gt("Ground Truth Coordinate Frame");
+             window_gt.setWindowSize(Size(500,500));
+             window_gt.setWindowPosition(Point(150,150));
+
   viz::Viz3d window_est("Estimation Coordinate Frame");
+             window_est.setWindowSize(Size(500,500));
+             window_est.setWindowPosition(Point(750,150));
+
 
   /// Add coordinate axes
   window_gt.showWidget("Ground Truth Coordinate Widget", viz::WCoordinateSystem());
   window_est.showWidget("Estimation Coordinate Widget", viz::WCoordinateSystem());
 
   // Create the pointcloud
-  cout << "Recovering points" << endl;
+  cout << "Recovering points  ... ";
 
   vector<Vec3f> point_cloud;
   for (int i = 0; i < points3d.cols; ++i) {
@@ -95,45 +134,80 @@ int main(int argc, char* argv[])
     point_cloud_est.push_back(point3d_est);
   }
 
-  /// Add the pointcloud
-  if ( !point_cloud.empty() && !point_cloud_est.empty() )
-  {
-    cout << "Rendering points" << endl;
-    viz::WCloud cloud_widget(point_cloud, viz::Color::green());
-    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
-    window_gt.showWidget("point_cloud", cloud_widget);
-    window_est.showWidget("point_cloud_est", cloud_est_widget);
-  }
-  else
-  {
-    cout << "Cannot rendering points: empty pointcloud" << endl;
-  }
+  cout << "OK" << endl;
 
-  /// Add cameras
-  cout << "Rendering Cameras" << endl;
+
+  /// Recovering cameras
+  cout << "Recovering cameras ... ";
+
   std::vector<Affine3d> path_gt;
   for (int i = 0, j = 1; i < nviews; ++i, ++j)
     path_gt.push_back(Affine3d(Rs[i],ts[i]));
   path_gt.push_back(Affine3d(Rs[0],ts[0]));
 
   std::vector<Affine3d> path_est;
-  for (int i = 0, j = 1; i < nviews; ++i, ++j)
+  for (size_t i = 0, j = 1; i < Rs_est.size(); ++i, ++j)
     path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
   path_est.push_back(Affine3d(Rs_est[0],ts_est[0]));
 
-  window_gt.showWidget("cameras_frames_and_lines_gt", viz::WTrajectory(path_gt, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
-  window_gt.showWidget("cameras_frustums_gt", viz::WTrajectoryFrustums(path_gt, K, 0.3, viz::Color::yellow()));
-  window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
-  window_est.showWidget("cameras_frustums_est", viz::WTrajectoryFrustums(path_est, K, 0.3, viz::Color::yellow()));
-  window_gt.spin();
-  window_est.spin();
+  cout << "OK" << endl;
+
+
+  /// Add the pointcloud
+  if ( !point_cloud.empty() && !point_cloud_est.empty() )
+  {
+    cout << "Rendering points   ... ";
+
+    viz::WCloud cloud_widget(point_cloud, viz::Color::green());
+    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
+    window_gt.showWidget("point_cloud", cloud_widget);
+    window_est.showWidget("point_cloud_est", cloud_est_widget);
+
+    cout << "OK" << endl;
+  }
+  else
+  {
+    cout << "Cannot render points: Empty pointcloud" << endl;
+  }
+
+
+  /// Add cameras
+  if ( !path_gt.empty() && !path_est.empty() )
+  {
+    cout << "Rendering Cameras  ... ";
+
+    window_gt.showWidget("cameras_frames_and_lines_gt", viz::WTrajectory(path_gt, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
+    window_gt.showWidget("cameras_frustums_gt", viz::WTrajectoryFrustums(path_gt, K, 0.3, viz::Color::yellow()));
+    window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
+    window_est.showWidget("cameras_frustums_est", viz::WTrajectoryFrustums(path_est, K, 0.3, viz::Color::yellow()));
+
+    cout << "OK" << endl;
+  }
+  else
+  {
+    cout << "Cannot render the cameras: Empty path" << endl;
+  }
+
+  /// Wait for key 'q' to close the window
+  cout << endl << "Press 'q' to close each windows ... " << endl;
+
+  window_gt.spinOnce(); window_est.spinOnce();
+  window_gt.spin(); window_est.spin();
+
+  cout
+       << "\n-----------------------------------------------------------\n"
+       << "Closing Application.\n"
+       << "Now you know a little bit more about Structure from Motion.\n"
+       << "Thanks to follow this tutorial. The OpenCV team.\n"
+       << "-----------------------------------------------------------\n"
+       << endl;
 
   return 0;
 }
 
 
 void
-generateScene(const size_t n_views, const size_t n_points, const bool is_projective, Matx33d & K, vector<Matx33d> & R,
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<Matx33d> & R,
               vector<Vec3d> & t, vector<Matx34d> & P, Mat_<double> & points3d,
               vector<Mat_<double> > & points2d)
 {
@@ -143,11 +217,11 @@ generateScene(const size_t n_views, const size_t n_points, const bool is_project
   cv::RNG rng;
 
   const float size_scene = 10.0f;
-  const float offset_scene = 5.0f;
+  const float offset_scene = 0.0f;
 
   // Generate a bunch of random 3d points in a 0, 1 cube
   points3d.create(3, n_points);
-  rng.fill(points3d, cv::RNG::UNIFORM, offset_scene, size_scene + offset_scene);
+  rng.fill(points3d, cv::RNG::UNIFORM, 0, size_scene);
 
   // Generate random intrinsics
   K = Matx33d(500,   0, 320,
@@ -159,6 +233,7 @@ generateScene(const size_t n_views, const size_t n_points, const bool is_project
   float cy = r/2.0f + offset_scene;
   float cz = r/2.0f + offset_scene;
   int num_segments = n_views;
+  cx = cy = cz = 0;
 
   for(int ii = 0; ii < num_segments; ii++)
   {
