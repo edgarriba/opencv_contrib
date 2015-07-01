@@ -134,12 +134,36 @@ essentialFromRt( const Matx33d &R1,
                  const Vec3d &t2,
                  Matx33d &E );
 
-
-
 CV_EXPORTS
 void
 normalizeFundamental( const Matx33d &F,
                       Matx33d &F_normalized );
+
+/** Compute Absolute or Exterior Orientation (Pose Estimation)
+ *  between 2 sets of 3D point.
+ *
+ * Absolute is: given x and xp (2 arrays of 3D coordinates), find the best
+ * transformation such that x=s*R*xp+t
+ *
+ * Exterior is: 1 array of 3D position x is known and its 2D orthographic
+ * projection xp.
+ *
+ * Find the best transformation such that xp=projection*(s*R*x+t)
+ * (same as Pose Estimation, ePNP). Projection is ortho for now
+ *
+ * The routines below are only for the orthographic case for now
+ *
+ * @param x Right 3xN or 2xN array of points
+ * @param xp Left 3xN or 2xN array of points
+ * @param R The computed rotation matrix
+ * @param t The computed translation vector
+ * @param s The computed scale factor
+ *
+ */
+CV_EXPORTS
+void
+computeOrientation( const cv::Mat_<double> &x, const cv::Mat_<double> &xp,
+                    Matx33d &R, Vec3d &t, double s );
 
 } /* namespace cv */
 

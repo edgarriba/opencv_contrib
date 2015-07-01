@@ -37,12 +37,14 @@
 #include "opencv2/sfm/triangulation.hpp"
 #include "opencv2/sfm/fundamental.hpp"
 #include "opencv2/sfm/numeric.hpp"
+#include "opencv2/sfm/conditioning.hpp"
 
 #include "libmv/multiview/robust_fundamental.h"
 #include "libmv/multiview/fundamental.h"
 #include <opencv2/sfm/eigen.hpp>
 #include <opencv2/core/eigen.hpp>
 
+#include <iostream>
 using namespace std;
 
 namespace cv
@@ -230,6 +232,30 @@ namespace cv
         {
             F_normalized *= -1;
         }
+    }
+
+    void
+    computeOrientation( const cv::Mat_<double> &x, const cv::Mat_<double> &xp,
+                        Matx33d &R, Vec3d &t, double s )
+    {
+        const int nPoint = x.cols;
+        std::cout << "ComputeOrientation " << nPoint << " " << xp.cols << std::endl;
+        CV_Assert( nPoint == xp.cols);
+        CV_Assert( x.rows == xp.rows);
+
+        Mat rr, rl, rt, lt;
+        normalizePoints(x, rr, rt);
+        normalizePoints(x, rl, lt);
+
+        Mat rrBar, rlBar, rVar, lVar;
+        meanAndVarianceAlongRows(rr, rrBar, rVar);
+        meanAndVarianceAlongRows(rl, rlBar, lVar);
+
+        Mat rrp, rlp;
+        rrp = rr - repeat(rrBar, x.rows, x.cols);
+        rlp = rl - repeat(rlBar, xp.rows, xp.cols);
+
+
     }
 
 } /* namespace cv */
