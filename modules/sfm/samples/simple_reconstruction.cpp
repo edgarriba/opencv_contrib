@@ -141,12 +141,12 @@ int main(int argc, char* argv[])
   cout << "Recovering cameras ... ";
 
   std::vector<Affine3d> path_gt;
-  for (int i = 0, j = 1; i < nviews; ++i, ++j)
+  for (size_t i = 0; i < Rs.size(); ++i)
     path_gt.push_back(Affine3d(Rs[i],ts[i]));
   path_gt.push_back(Affine3d(Rs[0],ts[0]));
 
   std::vector<Affine3d> path_est;
-  for (size_t i = 0, j = 1; i < Rs_est.size(); ++i, ++j)
+  for (size_t i = 0; i < Rs_est.size(); ++i)
     path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
   path_est.push_back(Affine3d(Rs_est[0],ts_est[0]));
 
@@ -194,14 +194,6 @@ int main(int argc, char* argv[])
   window_gt.spinOnce(); window_est.spinOnce();
   window_gt.spin(); window_est.spin();
 
-  cout
-       << "\n-----------------------------------------------------------\n"
-       << "Closing Application.\n"
-       << "Now you know a little bit more about Structure from Motion.\n"
-       << "Thanks to follow this tutorial. The OpenCV team.\n"
-       << "-----------------------------------------------------------\n"
-       << endl;
-
   return 0;
 }
 
@@ -216,57 +208,52 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<M
 
   cv::RNG rng;
 
-  const float size_scene = 10.0f;
-  const float offset_scene = 0.0f;
+  const float size_scene = 10.0f, offset_scene = 10.0f;
 
-  // Generate a bunch of random 3d points in a 0, 1 cube
+  // Generate a bunch of random 3d points in a cube
   points3d.create(3, n_points);
-  rng.fill(points3d, cv::RNG::UNIFORM, 0, size_scene);
+  rng.fill(points3d, cv::RNG::UNIFORM, -size_scene/2, size_scene/2);
 
   // Generate random intrinsics
   K = Matx33d(500,   0, 320,
                 0, 500, 240,
                 0,   0,   1);
 
-  float r = size_scene;
-  float cx = r/2.0f + offset_scene;
-  float cy = r/2.0f + offset_scene;
-  float cz = r/2.0f + offset_scene;
-  int num_segments = n_views;
-  cx = cy = cz = 0;
+  const float r = size_scene;
+  const float cx = 0, cy = 0, cz = 0;
 
-  for(int ii = 0; ii < num_segments; ii++)
+  for (size_t i = 0; i < n_views; ++i)
   {
-    float theta = 2.0f * CV_PI * float(ii) / float(num_segments);//get the current angle
+    // get the current angle
+    const float theta = 2.0f * CV_PI * float(i) / float(n_views);
 
-    float x = r * cosf(theta);//calculate the x component
-    float y = r * sinf(theta);//calculate the y component
-
-    // set camera position
-    t[ii] = cv::Vec3d(x + cx, y + cy, cz);//output vertex
-
-    // set rotation around x and y axis
-    Vec3d vecx(-CV_PI/2, 0, 0);
-    Vec3d vecy(0, -CV_PI/2-theta, 0);
-    Vec3d vecz(0, 0, 0);
+    // set rotation around x and y axis and apply a 90deg rotation
+    const Vec3d vecx(-CV_PI/2, 0, 0),
+                vecy(0, -CV_PI/2-theta, 0),
+                vecz(0, 0, 0);
 
     Matx33d Rx, Ry, Rz;
     Rodrigues(vecx, Rx);
     Rodrigues(vecy, Ry);
     Rodrigues(vecz, Rz);
 
-    // apply ordered rotations
-    R[ii] = Rx * Ry * Rz;
+    // compute compute rotation matrix
+    R[i] = Rx * Ry * Rz;
+
+    const float x = r * cosf(theta), // calculate the x component
+                y = r * sinf(theta); // calculate the y component
+
+    // compute translation vector
+    t[i] = cv::Vec3d(x + cx, y + cy, cz);//output vertex
   }
 
   // Compute projection matrices
   P.resize(n_views);
   for (size_t i = 0; i < n_views; ++i)
   {
-    Matx33d K3 = K, R3 = R[i];
-    Vec3d t3 = t[i];
+    const Matx33d K3 = K, R3 = R[i];
+    const Vec3d t3 = t[i];
     P_From_KRt(K3, R3, t3, P[i]);
-    //cout << P[i] << endl;
   }
 
   // Compute homogeneous 3d points
@@ -278,7 +265,7 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<M
   points2d.resize(n_views);
   for (size_t i = 0; i < n_views; ++i)
   {
-    Mat_<double> points2d_tmp = Mat(P[i]) * points3d_homogeneous;
+    const Mat_<double> points2d_tmp = Mat(P[i]) * points3d_homogeneous;
     points2d[i].create(2, n_points);
     for (unsigned char j = 0; j < 2; ++j)
       Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
