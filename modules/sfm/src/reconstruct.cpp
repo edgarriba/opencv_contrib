@@ -222,15 +222,18 @@ namespace cv
   void
   reconstruct(std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K, OutputArray points3d)
   {
+    libmv::Tracks tracks;
 
     Ptr<FeatureDetector> edetector = AKAZE::create();
     Ptr<DescriptorExtractor> edescriber = AKAZE::create();
 
-    libmv::Tracks tracks;
-    libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
+    cout << "Initialize nViewMatcher ... ";
+    libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber); cout << "OK" << endl;
 
-    nViewMatcher.computeCrossMatch(images);
+    cout << "Performing Cross Matching ... ";
+    nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
 
+    cout << "Building Tracks ... ";
     for (size_t i=0; i< nViewMatcher.getMatches().NumImages(); ++i) {
       for (size_t j=0; j<i; ++j)  {
         Matches::Features<KeypointFeature> features =
