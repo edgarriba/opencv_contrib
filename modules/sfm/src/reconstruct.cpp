@@ -41,8 +41,11 @@
 #include <opencv2/sfm/projection.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/calib3d.hpp>
+#include <opencv2/features2d.hpp>
 
 // libmv headers
+#include "libmv/correspondence/feature_matching.h"
+#include "libmv/correspondence/nRobustViewMatching.h"
 #include "libmv/reconstruction/reconstruction.h"
 #include "libmv/reconstruction/projective_reconstruction.h"
 
@@ -168,7 +171,8 @@ namespace cv
       }
       else
       {
-        // TODO: random images matching
+
+
       }
 
       // Initial reconstruction
@@ -212,6 +216,60 @@ namespace cv
       eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
       Mat(Ka).copyTo(K.getMat());
     }
+
+  }
+
+  void
+  reconstruct(std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K, OutputArray points3d)
+  {
+
+    Ptr<FeatureDetector> edetector = AKAZE::create();
+    Ptr<DescriptorExtractor> edescriber = AKAZE::create();
+
+    libmv::Tracks tracks;
+    libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
+
+    nViewMatcher.computeCrossMatch(images);
+
+    for (size_t i=0; i< nViewMatcher.getMatches().NumImages(); ++i) {
+      for (size_t j=0; j<i; ++j)  {
+        Matches::Features<KeypointFeature> features =
+          nViewMatcher.getMatches().InImage<KeypointFeature>(i);
+
+        while (features) {
+
+          Matches::TrackID id_track = features.track();
+          const Feature * ref = features.feature();
+          const Feature * f = nViewMatcher.getMatches().Get(j, id_track);
+          if (f && ref)  {
+            KeypointFeature * pt0 = ((KeypointFeature*)ref);
+            KeypointFeature * pt1 = ((KeypointFeature*)f);
+
+            tracks.Insert(i, j, pt0->x(), pt0->y());
+            tracks.Insert(i, j, pt1->x(), pt1->y());
+          }
+
+        features.operator++();
+        }
+      }
+    }
+
+    // Initial reconstruction
+    const int keyframe1 = 1, keyframe2 = nViewMatcher.getMatches().NumImages();
+
+    // Camera data (hacked by now)
+    const Matx33d Ka = K.getMat();
+    const double focal_length = Ka(0,0);
+    const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+
+    // Refinement parameters
+    libmv_Reconstruction libmv_reconstruction;
+    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+
+    // Perform reconstruction
+    libmv_solveReconstruction( tracks, keyframe1, keyframe2,
+                               focal_length, principal_x, principal_y, k1, k2, k3,
+                               libmv_reconstruction, refine_intrinsics );
 
   }
 

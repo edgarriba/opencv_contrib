@@ -93,6 +93,18 @@ namespace cv
   reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K,
               OutputArray points3d, bool is_projective = false, bool has_outliers = false, bool is_sequence = false);
 
+  /** @brief Reconstruct 3d points from 2d correspondences while performing autocalibration.
+   * @param images a vector of string with the images paths
+   * @param Rs The 3 x 3 rotations of the camera
+   * @param Ts The 3 x 1 translations of the camera
+   * @param K The intrinsic parameters of the camera
+   * @param points3d the 3d points
+   */
+  CV_EXPORTS
+  void
+  reconstruct(std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K, OutputArray points3d);
+
+
   /** @brief Computes the fundamental matrix from corresponding points in two views
    * @param x1 2xN Array of 2D points in view 1
    * @param x2 2xN Array of 2D points in view 2
