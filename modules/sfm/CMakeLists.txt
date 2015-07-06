@@ -29,7 +29,13 @@ set(LIBMV_LIGHT_LIBS
 
 ### CHECK OPENCV SFM MODULE DEPENDENCIES ###
 
-set(OPENCV_SFM_DEPS opencv_core opencv_ts opencv_calib3d opencv_features2d opencv_viz)
+set(OPENCV_SFM_DEPS
+  opencv_core
+  opencv_ts
+  opencv_calib3d
+  opencv_features2d
+  opencv_viz
+)
 
 ocv_check_dependencies(${OPENCV_SFM_DEPS})
 ocv_include_directories("${OpenCV_SOURCE_DIR}/include/opencv")
@@ -39,7 +45,7 @@ ocv_include_modules_recurse(${OPENCV_SFM_DEPS})
 ### CREATE OPENCV SFM MODULE ###
 
 ocv_add_module(sfm ${OPENCV_SFM_DEPS})
-ocv_include_directories( ${LIBMV_LIGHT_INCLUDES})
+ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 
 # build libmv_light
 add_subdirectory(src/libmv_light)
