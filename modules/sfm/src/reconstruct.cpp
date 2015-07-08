@@ -178,7 +178,7 @@ namespace cv
       // Initial reconstruction
       const int keyframe1 = 1, keyframe2 = nviews;
 
-      // Camera data (hacked by now)
+      // Camera data
       const double focal_length = Ka(0,0);
       const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
 
@@ -228,40 +228,31 @@ namespace cv
     Ptr<DescriptorExtractor> edescriber = AKAZE::create();
 
     cout << "Initialize nViewMatcher ... ";
-    libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber); cout << "OK" << endl;
+    libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
 
-    cout << "Performing Cross Matching ... ";
+    cout << "OK" << endl << "Performing Cross Matching ... ";
     nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
 
-    cout << "Building Tracks ... ";
-    for (size_t i=0; i< nViewMatcher.getMatches().NumImages(); ++i) {
-      for (size_t j=0; j<i; ++j)  {
-        Matches::Features<KeypointFeature> features =
-          nViewMatcher.getMatches().InImage<KeypointFeature>(i);
+    // Building tracks
+    libmv::Matches matches = nViewMatcher.getMatches();
 
-        while (features) {
-
-          Matches::TrackID id_track = features.track();
-          const Feature * ref = features.feature();
-          const Feature * f = nViewMatcher.getMatches().Get(j, id_track);
-          if (f && ref)  {
-            KeypointFeature * pt0 = ((KeypointFeature*)ref);
-            KeypointFeature * pt1 = ((KeypointFeature*)f);
-
-            tracks.Insert(i, j, pt0->x(), pt0->y());
-            tracks.Insert(i, j, pt1->x(), pt1->y());
-          }
-
-        features.operator++();
+    for (size_t trackId = 0; trackId < matches.NumTracks(); trackId++)
+    {
+      for (size_t frameId = 0; frameId < matches.NumImages(); frameId++)
+      {
+        const Feature * f = matches.Get(frameId,trackId);
+        if (f)
+        {
+          KeypointFeature * pt = ((KeypointFeature*)f);
+          tracks.Insert(frameId+1, trackId+1, pt->x(), pt->y());
         }
       }
     }
 
     // Initial reconstruction
-    const int keyframe1 = 1, keyframe2 = nViewMatcher.getMatches().NumImages();
+    const int keyframe1 = 1, keyframe2 = matches.NumImages();
 
-    // Camera data (hacked by now)
-    const Matx33d Ka = K.getMat();
+    Matx33d Ka = K.getMat();
     const double focal_length = Ka(0,0);
     const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
 
@@ -273,6 +264,38 @@ namespace cv
     libmv_solveReconstruction( tracks, keyframe1, keyframe2,
                                focal_length, principal_x, principal_y, k1, k2, k3,
                                libmv_reconstruction, refine_intrinsics );
+
+    //const int depth = pts2d[0].depth();
+    const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
+    Rs.create(nviews, 1, CV_64F);
+    Ts.create(nviews, 1, CV_64F);
+
+    // Extract estimated camera poses
+    Matx33d R;
+    Vec3d t;
+    libmv::vector<libmv::EuclideanCamera> cameras = libmv_reconstruction.reconstruction.AllCameras();
+    for(unsigned int i = 0; i < nviews; ++i)
+    {
+      eigen2cv(cameras[i].R, R);
+      eigen2cv(cameras[i].t, t);
+      Mat(R).copyTo(Rs.getMatRef(i));
+      Mat(t).copyTo(Ts.getMatRef(i));
+    }
+
+    // Extract reconstructed points
+    libmv::vector<EuclideanPoint> points = libmv_reconstruction.reconstruction.AllPoints();
+    size_t n_points = (unsigned) points.size();
+
+    points3d.create(3, n_points, CV_64F);
+    Mat points3d_ = points3d.getMat();
+
+    for ( unsigned i = 0; i < n_points; ++i )
+      for ( int j = 0; j < 3; ++j )
+        points3d_.at<double>(j, i) = points[i].X[j];
+
+    // Extract refined intrinsic parameters
+    eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+    Mat(Ka).copyTo(K.getMat());
 
   }
 
