@@ -158,6 +158,7 @@ namespace cv
     }
     else if (nviews > 2)
     {
+/*
       Ka = K.getMat();
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
 
@@ -184,7 +185,7 @@ namespace cv
 
       // Refinement parameters
       libmv_Reconstruction libmv_reconstruction;
-      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
 
       // Perform reconstruction
       libmv_solveReconstruction( tracks, keyframe1, keyframe2,
@@ -215,17 +216,16 @@ namespace cv
       // Extract refined intrinsic parameters
       eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
       Mat(Ka).copyTo(K.getMat());
+*/
     }
 
   }
 
   void
-  reconstruct(std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K, OutputArray points3d)
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K)
   {
-    libmv::Tracks tracks;
-
-    Ptr<FeatureDetector> edetector = AKAZE::create();
-    Ptr<DescriptorExtractor> edescriber = AKAZE::create();
+    Ptr<FeatureDetector> edetector = KAZE::create();
+    Ptr<DescriptorExtractor> edescriber = KAZE::create();
 
     cout << "Initialize nViewMatcher ... ";
     libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
@@ -234,20 +234,11 @@ namespace cv
     nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
 
     // Building tracks
+    libmv::Tracks tracks;
     libmv::Matches matches = nViewMatcher.getMatches();
 
-    for (size_t trackId = 0; trackId < matches.NumTracks(); trackId++)
-    {
-      for (size_t frameId = 0; frameId < matches.NumImages(); frameId++)
-      {
-        const Feature * f = matches.Get(frameId,trackId);
-        if (f)
-        {
-          KeypointFeature * pt = ((KeypointFeature*)f);
-          tracks.Insert(frameId+1, trackId+1, pt->x(), pt->y());
-        }
-      }
-    }
+    parser_2D_tracks( matches, tracks );
+
 
     // Initial reconstruction
     const int keyframe1 = 1, keyframe2 = matches.NumImages();
@@ -257,8 +248,9 @@ namespace cv
     const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
 
     // Refinement parameters
-    libmv_Reconstruction libmv_reconstruction;
     int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+
+    libmv_ProjectiveReconstruction libmv_reconstruction;
 
     // Perform reconstruction
     libmv_solveReconstruction( tracks, keyframe1, keyframe2,
@@ -267,35 +259,130 @@ namespace cv
 
     //const int depth = pts2d[0].depth();
     const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
-    Rs.create(nviews, 1, CV_64F);
-    Ts.create(nviews, 1, CV_64F);
+    projection_matrices.create(nviews, 1, CV_64F);
 
-    // Extract estimated camera poses
-    Matx33d R;
-    Vec3d t;
-    libmv::vector<libmv::EuclideanCamera> cameras = libmv_reconstruction.reconstruction.AllCameras();
+    // Extract estimated projection matrices
+    Matx34d P;
     for(unsigned int i = 0; i < nviews; ++i)
     {
-      eigen2cv(cameras[i].R, R);
-      eigen2cv(cameras[i].t, t);
-      Mat(R).copyTo(Rs.getMatRef(i));
-      Mat(t).copyTo(Ts.getMatRef(i));
+      eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].P, P);
+      Mat(P).copyTo(projection_matrices.getMatRef(i));
     }
 
     // Extract reconstructed points
-    libmv::vector<EuclideanPoint> points = libmv_reconstruction.reconstruction.AllPoints();
-    size_t n_points = (unsigned) points.size();
+    //libmv::vector<EuclideanPoint> points = libmv_reconstruction.reconstruction.AllPoints();
+    size_t n_points =
+      (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
 
     points3d.create(3, n_points, CV_64F);
     Mat points3d_ = points3d.getMat();
 
     for ( unsigned i = 0; i < n_points; ++i )
       for ( int j = 0; j < 3; ++j )
-        points3d_.at<double>(j, i) = points[i].X[j];
+        points3d_.at<double>(j, i) =
+          libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
 
     // Extract refined intrinsic parameters
     eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
     Mat(Ka).copyTo(K.getMat());
+  }
+
+
+  void
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
+              InputOutputArray K, OutputArray points3d, bool is_projective)
+  {
+    if ( is_projective )
+    {
+      Matx33d Ka = K.getMat();
+
+      std::vector < Mat > Ps_estimated;
+      //reconstruct(images, Ps_estimated, points3d, Ka);
+
+      cout << "****************** HOLAAAAAAAAAAAAAA ****************" << endl;
+
+      const unsigned nviews = Ps_estimated.size();
+      Rs.create(nviews, 1, CV_64F);
+      Ts.create(nviews, 1, CV_64F);
+
+      Matx33d R;
+      Vec3d t;
+      for(unsigned int i = 0; i < nviews; ++i)
+      {
+        KRt_From_P(Ps_estimated[i], Ka, R, t);
+        Mat(R).copyTo(Rs.getMatRef(i));
+        Mat(t).copyTo(Ts.getMatRef(i));
+      }
+      Mat(Ka).copyTo(K.getMat());
+
+    }
+    else
+    {
+      Ptr<FeatureDetector> edetector = KAZE::create();
+      Ptr<DescriptorExtractor> edescriber = KAZE::create();
+
+      cout << "Initialize nViewMatcher ... ";
+      libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
+
+      cout << "OK" << endl << "Performing Cross Matching ... ";
+      nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
+
+      // Building tracks
+      libmv::Tracks tracks;
+      libmv::Matches matches = nViewMatcher.getMatches();
+      parser_2D_tracks( matches, tracks );
+
+
+      // Initial reconstruction
+      const int keyframe1 = 1, keyframe2 = matches.NumImages();
+
+      Matx33d Ka = K.getMat();
+      const double focal_length = Ka(0,0);
+      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+
+      // Refinement parameters
+      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+
+      libmv_EuclideanReconstruction libmv_reconstruction;
+
+      // Perform reconstruction
+      libmv_solveReconstruction( tracks, keyframe1, keyframe2,
+                                 focal_length, principal_x, principal_y, k1, k2, k3,
+                                 libmv_reconstruction, refine_intrinsics );
+
+      //const int depth = pts2d[0].depth();
+      const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
+      Rs.create(nviews, 1, CV_64F);
+      Ts.create(nviews, 1, CV_64F);
+
+      // Extract estimated camera poses
+      Matx33d R;
+      Vec3d t;
+      //libmv::vector<libmv::EuclideanCamera> cameras = libmv_reconstruction.reconstruction.AllCameras();
+      for(unsigned int i = 0; i < nviews; ++i)
+      {
+        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
+        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
+        Mat(R).copyTo(Rs.getMatRef(i));
+        Mat(t).copyTo(Ts.getMatRef(i));
+      }
+
+      // Extract reconstructed points
+      //libmv::vector<EuclideanPoint> points = libmv_reconstruction.reconstruction.AllPoints();
+      size_t n_points = (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
+
+      points3d.create(3, n_points, CV_64F);
+      Mat points3d_ = points3d.getMat();
+
+      for ( unsigned i = 0; i < n_points; ++i )
+        for ( int j = 0; j < 3; ++j )
+          points3d_.at<double>(j, i) = libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
+
+      // Extract refined intrinsic parameters
+      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+      Mat(Ka).copyTo(K.getMat());
+
+    }
 
   }
 

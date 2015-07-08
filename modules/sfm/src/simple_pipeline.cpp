@@ -54,7 +54,7 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
                            double focal_length,
                            double principal_x, double principal_y,
                            double k1, double k2, double k3,
-                           libmv_Reconstruction &libmv_reconstruction,
+                           libmv_EuclideanReconstruction &libmv_reconstruction,
                            int refine_intrinsics )
 {
     /* Invert the camera intrinsics. */
@@ -93,23 +93,112 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 
     libmv_reconstruction.tracks = tracks;
     libmv_reconstruction.error = libmv::EuclideanReprojectionError(tracks, *reconstruction, *intrinsics);
+
 }
+
+
+void
+libmv_solveReconstruction( const libmv::Tracks &tracks,
+                           int keyframe1, int keyframe2,
+                           double focal_length,
+                           double principal_x, double principal_y,
+                           double k1, double k2, double k3,
+                           libmv_ProjectiveReconstruction &libmv_reconstruction,
+                           int refine_intrinsics )
+{
+
+  /* Invert the camera intrinsics. */
+  libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
+  libmv::ProjectiveReconstruction *reconstruction = &libmv_reconstruction.reconstruction;
+  libmv::CameraIntrinsics *intrinsics = &libmv_reconstruction.intrinsics;
+
+  intrinsics->SetFocalLength(focal_length, focal_length);
+  intrinsics->SetPrincipalPoint(principal_x, principal_y);
+  intrinsics->SetRadialDistortion(k1, k2, k3);
+
+  cout << "\tNumber of markers: " << markers.size() << endl;
+  for (int i = 0; i < markers.size(); ++i)
+  {
+      intrinsics->InvertIntrinsics(markers[i].x,
+                                   markers[i].y,
+                                   &(markers[i].x),
+                                   &(markers[i].y));
+  }
+
+  libmv::Tracks normalized_tracks(markers);
+
+  cout << "\tframes to init from: " << keyframe1 << " " << keyframe2 << endl;
+  libmv::vector<libmv::Marker> keyframe_markers =
+      normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
+  cout << "\tNumber of markers for init: " << keyframe_markers.size() << endl;
+
+  libmv::ProjectiveReconstructTwoFrames(keyframe_markers, reconstruction);
+  libmv::ProjectiveBundle(normalized_tracks, reconstruction);
+  libmv::ProjectiveCompleteReconstruction(libmv::ReconstructionOptions(), normalized_tracks, reconstruction);
+
+//  if (refine_intrinsics)
+//  {
+//    libmv::ProjectiveBundleCommonIntrinsics( tracks, refine_intrinsics, libmv::BUNDLE_NO_CONSTRAINTS, reconstruction, intrinsics);
+//  }
+
+  libmv_reconstruction.tracks = tracks;
+  libmv_reconstruction.error = libmv::ProjectiveReprojectionError(tracks, *reconstruction, *intrinsics);
+
+}
+
 
 void
 parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks )
 {
   const int nframes = static_cast<int>(points2d.size());
 
-  for (int frame = 1; frame <= nframes; ++frame)
-  {
+  for (int frame = 1; frame <= nframes; ++frame) {
+
     const int ntracks = points2d[frame-1].cols;
-    for (int track = 1; track <= ntracks; ++track)
-    {
-        const Vec2d track_pt = points2d[frame-1].col(track-1);
-        tracks.Insert(frame, track, track_pt[0], track_pt[1]);
+
+    for (int track = 1; track <= ntracks; ++track) {
+      const Vec2d track_pt = points2d[frame-1].col(track-1);
+      tracks.Insert(frame, track, track_pt[0], track_pt[1]);
     }
   }
+}
 
+void
+parser_2D_tracks( const libmv::Matches matches, libmv::Tracks &tracks )
+{
+  std::set<Matches::ImageID>::const_iterator iter_image =
+      matches.get_images().begin();
+
+  bool is_first_time = true;
+
+  for (; iter_image != matches.get_images().end(); ++iter_image) {
+    // Exports points
+    Matches::Features<PointFeature> pfeatures =
+        matches.InImage<PointFeature>(*iter_image);
+
+    while(pfeatures) {
+
+      double x = pfeatures.feature()->x(),
+             y = pfeatures.feature()->y();
+
+      // valid marker
+      if ( x > 0 && y > 0 )
+      {
+          tracks.Insert(*iter_image+1, pfeatures.track()+1, x, y);
+
+          if ( is_first_time )
+              is_first_time = false;
+      }
+
+      // lost track
+      else if ( x < 0 && y < 0 )
+      {
+          is_first_time = true;
+      }
+
+      pfeatures.operator++();
+    }
+  }
 }
 
 } // namespace cv

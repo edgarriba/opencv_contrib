@@ -40,6 +40,9 @@
 
 #include <opencv2/core.hpp>
 
+#include "libmv/correspondence/feature.h"
+#include "libmv/correspondence/feature_matching.h"
+#include "libmv/correspondence/matches.h"
 #include "libmv/simple_pipeline/pipeline.h"
 #include "libmv/simple_pipeline/camera_intrinsics.h"
 #include "libmv/simple_pipeline/bundle.h"
@@ -56,14 +59,45 @@ enum { SFM_BUNDLE_FOCAL_LENGTH    = libmv::BUNDLE_FOCAL_LENGTH,
 
 typedef struct libmv_Reconstruction
 {
-    libmv::EuclideanReconstruction reconstruction;
+  /* used for per-track average error calculation after reconstruction */
+  libmv::Tracks tracks;
+  libmv::CameraIntrinsics intrinsics;
 
-    /* used for per-track average error calculation after reconstruction */
-    libmv::Tracks tracks;
-    libmv::CameraIntrinsics intrinsics;
-
-    double error;
+  double error;
 } libmv_Reconstruction;
+
+typedef struct libmv_EuclideanReconstruction : libmv_Reconstruction
+{
+  libmv::EuclideanReconstruction reconstruction;
+} libmv_EuclideanReconstruction;
+
+typedef struct libmv_ProjectiveReconstruction : libmv_Reconstruction
+{
+  libmv::ProjectiveReconstruction reconstruction;
+} libmv_ProjectiveReconstruction;
+
+
+//typedef struct libmv_Reconstruction
+//{
+//    libmv::EuclideanReconstruction reconstruction;
+//
+//    /* used for per-track average error calculation after reconstruction */
+//    libmv::Tracks tracks;
+//    libmv::CameraIntrinsics intrinsics;
+//
+//    double error;
+//} libmv_Reconstruction;
+//
+//typedef struct libmv_ProjectiveReconstruction
+//{
+//    libmv::ProjectiveReconstruction reconstruction;
+//
+//    /* used for per-track average error calculation after reconstruction */
+//    libmv::Tracks tracks;
+//    libmv::CameraIntrinsics intrinsics;
+//
+//    double error;
+//} libmv_ProjectiveReconstruction;
 
 // Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
 CV_EXPORTS
@@ -73,11 +107,25 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
                            double focal_length,
                            double principal_x, double principal_y,
                            double k1, double k2, double k3,
-                           libmv_Reconstruction &libmv_reconstruction,
+                           libmv_EuclideanReconstruction &libmv_reconstruction,
+                           int refine_intrinsics = 0 );
+
+// Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
+CV_EXPORTS
+void
+libmv_solveReconstruction( const libmv::Tracks &tracks,
+                           int keyframe1, int keyframe2,
+                           double focal_length,
+                           double principal_x, double principal_y,
+                           double k1, double k2, double k3,
+                           libmv_ProjectiveReconstruction &libmv_reconstruction,
                            int refine_intrinsics = 0 );
 
 void
 parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks );
+
+void
+parser_2D_tracks( const libmv::Matches matches, libmv::Tracks &tracks );
 
 } /* namespace cv */
 

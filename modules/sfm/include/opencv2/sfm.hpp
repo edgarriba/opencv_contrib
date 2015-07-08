@@ -93,6 +93,19 @@ namespace cv
   reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K,
               OutputArray points3d, bool is_projective = false, bool has_outliers = false, bool is_sequence = false);
 
+  /** @brief Reconstruct 3d points from 2d correspondences without performing autocalibration.
+   * @param images a vector of string with the images paths
+   * @param projection_matrices The 3 x 4 projections matrices of each image
+   * @param points3d the 3d points
+   * @param K The intrinsic parameters of the camera
+   * @param is_projective if true, the cameras are supposed to be projective
+   * @param has_outliers if true, the correspondences are not trusted
+   * @param is_sequence if true, the data is assumed to be from tracking in a video sequence
+   */
+  CV_EXPORTS
+  void
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K);
+
   /** @brief Reconstruct 3d points from 2d correspondences while performing autocalibration.
    * @param images a vector of string with the images paths
    * @param Rs The 3 x 3 rotations of the camera
@@ -102,8 +115,8 @@ namespace cv
    */
   CV_EXPORTS
   void
-  reconstruct(std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K, OutputArray points3d);
-
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
+              InputOutputArray K, OutputArray points3d, bool is_projective = false);
 
   /** @brief Computes the fundamental matrix from corresponding points in two views
    * @param x1 2xN Array of 2D points in view 1
