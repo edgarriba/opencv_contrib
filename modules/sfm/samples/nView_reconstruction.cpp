@@ -32,7 +32,7 @@ static void help() {
       << endl;
 }
 
-int getdir (string dir, vector<string> &files);
+int getdir (string dir, std::vector<string> &files);
 
 int main(int argc, char* argv[])
 {
@@ -65,9 +65,11 @@ int main(int argc, char* argv[])
                         0, fy, cy,
                         0,  0,  1);
 
-  vector<Mat> Rs_est, ts_est;
+  bool is_projective = true;
+  std::vector<Matx33d> Rs_est;
+  std::vector<Vec3d> ts_est;
   Mat_<double> points3d_estimated;
-  reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated);
+  //reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated, is_projective);
 
   // Print output
 
@@ -90,11 +92,11 @@ int main(int argc, char* argv[])
   // Recovering the pointcloud
   cout << "Recovering points  ... ";
 
-  vector<Vec3f> point_cloud;
+  std::vector<cv::Vec3f> point_cloud;
   for (int i = 0; i < points3d_estimated.cols; ++i) {
-    Vec3f point3d((float) points3d_estimated(0, i),
-                  (float) points3d_estimated(1, i),
-                  (float) points3d_estimated(2, i));
+    cv::Vec3f point3d((float) points3d_estimated(0, i),
+                      (float) points3d_estimated(1, i),
+                      (float) points3d_estimated(2, i));
     point_cloud.push_back(point3d);
   }
 
@@ -150,7 +152,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-int getdir (string dir, vector<string> &files)
+int getdir (string dir, std::vector<string> &files)
 {
     DIR *dp;
     struct dirent *dirp;

@@ -58,7 +58,7 @@ TEST(Sfm_robust, fundamentalFromCorrespondences8PointRobust)
     x2(1,n - 1) = 10;      // The outlier has vertical disparity.
 
     Matx33d F;
-    vector<int> inliers;
+    std::vector<int> inliers;
     fundamentalFromCorrespondences8PointRobust(x1, x2, 0.1, F, inliers);
 
     // F should be 0, 0,  0,
@@ -85,7 +85,7 @@ TEST(Sfm_robust, fundamentalFromCorrespondences8PointRealisticNoOutliers)
 
     Matx33d F_estimated;
 
-    vector<int> inliers;
+    std::vector<int> inliers;
     fundamentalFromCorrespondences8PointRobust(d.x1, d.x2, 3.0, F_estimated, inliers);
     EXPECT_EQ(d.x1.cols, inliers.size());
 

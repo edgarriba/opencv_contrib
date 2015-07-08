@@ -24,12 +24,10 @@ static void help() {
 }
 
 void
-generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<Matx33d> & R,
-              vector<Vec3d> & t, vector<Matx34d> & P, Mat_<double> & points3d,
-              vector<Mat_<double> > & points2d );
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+              std::vector<Mat_<double> > & points2d );
 
-void
-parser_2D_tracks( const vector<Mat_<double> > &points2d, libmv::Tracks &tracks );
 
 int main(int argc, char* argv[])
 {
@@ -52,10 +50,10 @@ int main(int argc, char* argv[])
       npoints = atoi(argv[2]);
   }
 
-  vector< Mat_<double> > points2d;
-  vector< Matx33d > Rs;
-  vector< Vec3d > ts;
-  vector< Matx34d > Ps;
+  std::vector< Mat_<double> > points2d;
+  std::vector< Matx33d > Rs;
+  std::vector< Vec3d > ts;
+  std::vector< Matx34d > Ps;
   Matx33d K;
   Mat_<double> points3d;
 
@@ -64,7 +62,7 @@ int main(int argc, char* argv[])
 
   /// Reconstruct the scene using the 2d correspondences
   Matx33d K_ = K;
-  vector<Mat> Rs_est, ts_est;
+  std::vector<cv::Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
   const bool is_projective = true;
   const bool has_outliers = false;
@@ -115,22 +113,22 @@ int main(int argc, char* argv[])
   // Create the pointcloud
   cout << "Recovering points  ... ";
 
-  vector<Vec3f> point_cloud;
+  std::vector<cv::Vec3f> point_cloud;
   for (int i = 0; i < points3d.cols; ++i) {
     // recover ground truth points3d
-    Vec3f point3d((float) points3d(0, i),
-                  (float) points3d(1, i),
-                  (float) points3d(2, i));
+    cv::Vec3f point3d((float) points3d(0, i),
+                      (float) points3d(1, i),
+                      (float) points3d(2, i));
     point_cloud.push_back(point3d);
   }
 
-  vector<Vec3f> point_cloud_est;
+  std::vector<cv::Vec3f> point_cloud_est;
   for (int i = 0; i < points3d_estimated.cols; ++i) {
 
     // recover estimated points3d
-    Vec3f point3d_est((float) points3d_estimated(0, i),
-                      (float) points3d_estimated(1, i),
-                      (float) points3d_estimated(2, i));
+    cv::Vec3f point3d_est((float) points3d_estimated(0, i),
+                          (float) points3d_estimated(1, i),
+                          (float) points3d_estimated(2, i));
     point_cloud_est.push_back(point3d_est);
   }
 
@@ -199,9 +197,9 @@ int main(int argc, char* argv[])
 
 
 void
-generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<Matx33d> & R,
-              vector<Vec3d> & t, vector<Matx34d> & P, Mat_<double> & points3d,
-              vector<Mat_<double> > & points2d)
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+              std::vector<Mat_<double> > & points2d)
 {
   R.resize(n_views);
   t.resize(n_views);
@@ -265,10 +263,10 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, vector<M
   points2d.resize(n_views);
   for (size_t i = 0; i < n_views; ++i)
   {
-    const Mat_<double> points2d_tmp = Mat(P[i]) * points3d_homogeneous;
+    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
     points2d[i].create(2, n_points);
     for (unsigned char j = 0; j < 2; ++j)
-      Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
+      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
   }
 
 // TODO: remove a certain number of points per view

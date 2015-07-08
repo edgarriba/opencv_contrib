@@ -83,11 +83,11 @@ int main(int argc, char** argv)
 
 	// Call the reconstruction function
 
-	vector < Mat_<double> > points2d;
+	std::vector < Mat_<double> > points2d;
 	points2d.push_back(x1);
 	points2d.push_back(x2);
 	Mat_<double> points3d_estimated;
-	vector < Mat > Ps_estimated;
+	std::vector < cv::Mat > Ps_estimated;
 
 	reconstruct(points2d, Ps_estimated, points3d_estimated, is_projective, has_outliers);
 
@@ -106,11 +106,11 @@ int main(int argc, char** argv)
 	// Display 3D points using VIZ module
 
 	// Create the pointcloud
-	vector<Vec3f> point_cloud;
+	std::vector<cv::Vec3f> point_cloud;
 	for (int i = 0; i < npts; ++i) {
-		Vec3f point3d((float) points3d_estimated(0, i),
-				(float) points3d_estimated(1, i),
-				(float) points3d_estimated(2, i));
+		cv::Vec3f point3d((float) points3d_estimated(0, i),
+				          (float) points3d_estimated(1, i),
+				          (float) points3d_estimated(2, i));
 		point_cloud.push_back(point3d);
 	}
 

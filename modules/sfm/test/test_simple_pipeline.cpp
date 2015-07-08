@@ -60,7 +60,7 @@ TEST(Sfm_simple_pipeline, backyard)
     double principal_x = 400, principal_y = 225, k1 = -0.158, k2 = 0.131, k3 = 0;
 
 
-    libmv_Reconstruction libmv_reconstruction;
+    libmv_EuclideanReconstruction libmv_reconstruction;
     int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
 
     libmv_solveReconstruction( tracks, keyframe1, keyframe2,

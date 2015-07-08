@@ -94,12 +94,12 @@ TEST(Sfm_fundamental, motionFromEssential)
     essentialFromRt(d.R1, d.t1, d.R2, d.t2, E);
 
     Matx33d R;
-    Vec3d t;
+    cv::Vec3d t;
     relativeCameraMotion(d.R1, d.t1, d.R2, d.t2, R, t);
     cv::normalize(t, t);
 
-    vector<Matx33d> Rs;
-    vector<Vec3d> ts;
+    std::vector<Matx33d> Rs;
+    std::vector<cv::Vec3d> ts;
     motionFromEssential(E, Rs, ts);
     bool one_solution_is_correct = false;
     for ( int i = 0; i < Rs.size(); ++i )
@@ -156,17 +156,17 @@ TEST(Sfm_fundamental, motionFromEssentialChooseSolution)
     essentialFromRt(d.R1, d.t1, d.R2, d.t2, E);
 
     Matx33d R;
-    Vec3d t;
+    cv::Vec3d t;
     relativeCameraMotion(d.R1, d.t1, d.R2, d.t2, R, t);
     normalize(t, t);
 
-    vector < Matx33d > Rs;
-    vector < Vec3d > ts;
+    std::vector < Matx33d > Rs;
+    std::vector < cv::Vec3d > ts;
     motionFromEssential(E, Rs, ts);
 
-    Vec2d x1(d.x1(0, 0), d.x1(1, 0));
-    Vec2d x2(d.x2(0, 0), d.x2(1, 0));
-    int solution = motionFromEssentialChooseSolution(Rs, ts, d.K1, x1, d.K2,x2);
+    cv::Vec2d x1(d.x1(0, 0), d.x1(1, 0));
+    cv::Vec2d x2(d.x2(0, 0), d.x2(1, 0));
+    int solution = motionFromEssentialChooseSolution(Rs, ts, d.K1, x1, d.K2, x2);
 
     EXPECT_LE(0, solution);
     EXPECT_LE(solution, 3);

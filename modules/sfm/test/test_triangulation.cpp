@@ -41,17 +41,17 @@ using namespace std;
 static void
 checkTriangulation(int nviews, int npoints, bool is_projective, float err_max2d, float err_max3d)
 {
-    vector<Mat_<double> > points2d;
-    vector<cv::Matx33d> Rs;
-    vector<cv::Vec3d> ts;
-    vector<cv::Matx34d> Ps;
+    std::vector<Mat_<double> > points2d;
+    std::vector<cv::Matx33d> Rs;
+    std::vector<cv::Vec3d> ts;
+    std::vector<cv::Matx34d> Ps;
     Matx33d K;
     Mat_<double> points3d;
     generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d, points2d);
 
     // get 3d points
-    Mat X, X_homogeneous;
-    vector<Mat_<double> > Ps_d(Ps.size());
+    cv::Mat X, X_homogeneous;
+    std::vector<Mat_<double> > Ps_d(Ps.size());
     for(size_t i=0; i<Ps.size(); ++i)
         Ps_d[i] = cv::Mat_<double>(Ps[i]);
     triangulatePoints(points2d, Ps_d, X);
@@ -61,7 +61,7 @@ checkTriangulation(int nviews, int npoints, bool is_projective, float err_max2d,
     {
         for (int k = 0; k < nviews; ++k)
         {
-            Mat x_reprojected;
+            cv::Mat x_reprojected;
             homogeneousToEuclidean( cv::Mat(Ps[k])*X_homogeneous.col(i), x_reprojected );
 
             // Check reprojection error. Should be nearly zero.
