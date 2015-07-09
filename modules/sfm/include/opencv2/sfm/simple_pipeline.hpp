@@ -43,6 +43,7 @@
 #include "libmv/correspondence/feature.h"
 #include "libmv/correspondence/feature_matching.h"
 #include "libmv/correspondence/matches.h"
+#include "libmv/correspondence/nRobustViewMatching.h"
 #include "libmv/simple_pipeline/pipeline.h"
 #include "libmv/simple_pipeline/camera_intrinsics.h"
 #include "libmv/simple_pipeline/bundle.h"
@@ -57,47 +58,31 @@ enum { SFM_BUNDLE_FOCAL_LENGTH    = libmv::BUNDLE_FOCAL_LENGTH,
        SFM_BUNDLE_TANGENTIAL      = libmv::BUNDLE_TANGENTIAL
 };
 
-typedef struct libmv_Reconstruction
+typedef struct libmv_ReconstructionBase
 {
   /* used for per-track average error calculation after reconstruction */
   libmv::Tracks tracks;
   libmv::CameraIntrinsics intrinsics;
 
   double error;
+
 } libmv_Reconstruction;
 
-typedef struct libmv_EuclideanReconstruction : libmv_Reconstruction
+
+typedef struct libmv_EuclideanReconstruction : public libmv_ReconstructionBase
 {
   libmv::EuclideanReconstruction reconstruction;
+
 } libmv_EuclideanReconstruction;
 
-typedef struct libmv_ProjectiveReconstruction : libmv_Reconstruction
+
+typedef struct libmv_ProjectiveReconstruction : public libmv_ReconstructionBase
 {
   libmv::ProjectiveReconstruction reconstruction;
+
 } libmv_ProjectiveReconstruction;
 
 
-//typedef struct libmv_Reconstruction
-//{
-//    libmv::EuclideanReconstruction reconstruction;
-//
-//    /* used for per-track average error calculation after reconstruction */
-//    libmv::Tracks tracks;
-//    libmv::CameraIntrinsics intrinsics;
-//
-//    double error;
-//} libmv_Reconstruction;
-//
-//typedef struct libmv_ProjectiveReconstruction
-//{
-//    libmv::ProjectiveReconstruction reconstruction;
-//
-//    /* used for per-track average error calculation after reconstruction */
-//    libmv::Tracks tracks;
-//    libmv::CameraIntrinsics intrinsics;
-//
-//    double error;
-//} libmv_ProjectiveReconstruction;
 
 // Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
 CV_EXPORTS
@@ -121,11 +106,18 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
                            libmv_ProjectiveReconstruction &libmv_reconstruction,
                            int refine_intrinsics = 0 );
 
+
+template <class T>
+void
+libmv_solveReconstructionImpl( const std::vector<std::string> &images,
+                               const cv::Matx33d &K,
+                               T &libmv_reconstruction);
+
 void
 parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks );
 
 void
-parser_2D_tracks( const libmv::Matches matches, libmv::Tracks &tracks );
+parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks );
 
 } /* namespace cv */
 

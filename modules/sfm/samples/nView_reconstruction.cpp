@@ -65,11 +65,10 @@ int main(int argc, char* argv[])
                         0, fy, cy,
                         0,  0,  1);
 
-  bool is_projective = true;
-  std::vector<Matx33d> Rs_est;
-  std::vector<Vec3d> ts_est;
+  bool is_projective = false;
+  std::vector<cv::Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
-  //reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated, is_projective);
+  reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated, is_projective);
 
   // Print output
 

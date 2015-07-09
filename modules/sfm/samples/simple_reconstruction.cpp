@@ -50,15 +50,16 @@ int main(int argc, char* argv[])
       npoints = atoi(argv[2]);
   }
 
+
+  /// Generate ground truth scene
   std::vector< Mat_<double> > points2d;
   std::vector< Matx33d > Rs;
   std::vector< Vec3d > ts;
   std::vector< Matx34d > Ps;
   Matx33d K;
   Mat_<double> points3d;
-
-  /// Generate ground truth scene
   generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
+
 
   /// Reconstruct the scene using the 2d correspondences
   Matx33d K_ = K;
@@ -217,7 +218,7 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
                 0, 500, 240,
                 0,   0,   1);
 
-  const float r = size_scene;
+  const float r = 2*size_scene;
   const float cx = 0, cy = 0, cz = 0;
 
   for (size_t i = 0; i < n_views; ++i)

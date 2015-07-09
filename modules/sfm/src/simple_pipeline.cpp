@@ -147,6 +147,45 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 }
 
 
+template <class T>
+void
+libmv_solveReconstructionImpl( const std::vector<std::string> &images,
+                               const cv::Matx33d &K,
+                               T &libmv_reconstruction)
+{
+  Ptr<FeatureDetector> edetector = AKAZE::create();
+  Ptr<DescriptorExtractor> edescriber = AKAZE::create();
+
+  cout << "Initialize nViewMatcher ... ";
+  libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
+
+  cout << "OK" << endl << "Performing Cross Matching ... ";
+  nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
+
+  // Building tracks
+  libmv::Tracks tracks;
+  libmv::Matches matches = nViewMatcher.getMatches();
+
+  parser_2D_tracks( matches, tracks );
+
+
+  // Initial reconstruction
+  const int keyframe1 = 1, keyframe2 = matches.NumImages();
+
+  const double focal_length = K(0,0);
+  const double principal_x = K(0,2), principal_y = K(1,2), k1 = 0, k2 = 0, k3 = 0;
+
+  // Refinement parameters
+  int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+
+  // Perform reconstruction
+  libmv_solveReconstruction( tracks, keyframe1, keyframe2,
+                             focal_length, principal_x, principal_y, k1, k2, k3,
+                             libmv_reconstruction, refine_intrinsics );
+
+}
+
+
 void
 parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks )
 {
@@ -164,7 +203,7 @@ parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks )
 }
 
 void
-parser_2D_tracks( const libmv::Matches matches, libmv::Tracks &tracks )
+parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
 {
   std::set<Matches::ImageID>::const_iterator iter_image =
       matches.get_images().begin();
@@ -200,5 +239,16 @@ parser_2D_tracks( const libmv::Matches matches, libmv::Tracks &tracks )
     }
   }
 }
+
+
+template void libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(
+  const std::vector<std::string> &images,
+  const cv::Matx33d &K,
+  libmv_EuclideanReconstruction &libmv_reconstruction);
+
+template void libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(
+  const std::vector<std::string> &images,
+  const cv::Matx33d &K,
+  libmv_ProjectiveReconstruction &libmv_reconstruction);
 
 } // namespace cv
