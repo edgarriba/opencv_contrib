@@ -83,6 +83,13 @@ typedef struct libmv_ProjectiveReconstruction : public libmv_ReconstructionBase
 } libmv_ProjectiveReconstruction;
 
 
+typedef struct libmv_UncalibratedReconstruction : public libmv_ReconstructionBase
+{
+  libmv::EuclideanReconstruction euclidean_reconstruction;
+  libmv::ProjectiveReconstruction projective_reconstruction;
+
+} libmv_UncalibratedReconstruction;
+
 
 // Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
 CV_EXPORTS
@@ -106,6 +113,15 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
                            libmv_ProjectiveReconstruction &libmv_reconstruction,
                            int refine_intrinsics = 0 );
 
+CV_EXPORTS
+void
+libmv_solveReconstruction( const libmv::Tracks &tracks,
+                           int keyframe1, int keyframe2,
+                           double focal_length,
+                           double principal_x, double principal_y,
+                           double k1, double k2, double k3,
+                           libmv_UncalibratedReconstruction &libmv_reconstruction,
+                           int refine_intrinsics = 0 );
 
 template <class T>
 void

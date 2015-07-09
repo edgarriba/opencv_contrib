@@ -37,6 +37,7 @@
 
 #include "libmv/simple_pipeline/bundle.h"
 #include "libmv/simple_pipeline/initialize_reconstruction.h"
+#include "libmv/simple_pipeline/uncalibrated_reconstructor.h"
 
 #include "libmv/simple_pipeline/tracks.h"
 
@@ -147,6 +148,30 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 }
 
 
+void
+libmv_solveReconstruction( const libmv::Tracks &tracks,
+                           int keyframe1, int keyframe2,
+                           double focal_length,
+                           double principal_x, double principal_y,
+                           double k1, double k2, double k3,
+                           libmv_UncalibratedReconstruction &libmv_reconstruction,
+                           int refine_intrinsics )
+{
+  UncalibratedReconstructor uncalibrated_reconstructor( principal_x, principal_y, keyframe1, keyframe2, tracks);
+
+  libmv_reconstruction.tracks = uncalibrated_reconstructor.calibrated_tracks();
+  libmv_reconstruction.intrinsics = uncalibrated_reconstructor.camera_intrinsics();
+
+  libmv_reconstruction.euclidean_reconstruction = uncalibrated_reconstructor.euclidean_reconstruction();
+  libmv_reconstruction.projective_reconstruction = uncalibrated_reconstructor.projective_reconstruction();
+
+  libmv_reconstruction.error =
+    ProjectiveReprojectionError( libmv_reconstruction.tracks,
+                                 libmv_reconstruction.projective_reconstruction,
+                                 libmv_reconstruction.intrinsics );
+}
+
+
 template <class T>
 void
 libmv_solveReconstructionImpl( const std::vector<std::string> &images,
@@ -250,5 +275,10 @@ template void libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(
   const std::vector<std::string> &images,
   const cv::Matx33d &K,
   libmv_ProjectiveReconstruction &libmv_reconstruction);
+
+template void libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(
+  const std::vector<std::string> &images,
+  const cv::Matx33d &K,
+  libmv_UncalibratedReconstruction &libmv_reconstruction);
 
 } // namespace cv

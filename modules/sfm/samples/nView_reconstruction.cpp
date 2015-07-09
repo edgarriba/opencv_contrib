@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
   Mat_<double> points3d_estimated;
   reconstruct(images_paths, Rs_est, ts_est, K, points3d_estimated, is_projective);
 
+
   // Print output
 
   cout << "\n----------------------------\n" << endl;

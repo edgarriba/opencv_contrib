@@ -42,6 +42,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
+#include <opencv2/highgui.hpp>
 
 // libmv headers
 #include "libmv/correspondence/feature_matching.h"
@@ -320,5 +321,59 @@ namespace cv
     }
 
   }
+
+
+  void
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
+              OutputArray K, OutputArray points3d, int method)
+  {
+    int width = 0, height = 0;
+
+    if ( images.size() > 1 )
+    {
+      Size sz = imread(images[0], 0).size();
+      width = sz.width, height = sz.height;
+    }
+
+    Matx33d Ka = Matx33d( 0, 0, height,
+                          0, 0, width,
+                          0, 0,      1);
+
+    libmv_UncalibratedReconstruction libmv_reconstruction;
+    libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(images, Ka, libmv_reconstruction);
+
+    const int depth = K.getMat().depth();
+    const unsigned nviews = libmv_reconstruction.euclidean_reconstruction.AllCameras().size();
+    Rs.create(nviews, 1, depth);
+    Ts.create(nviews, 1, depth);
+
+    // Extract estimated camera poses
+    Matx33d R; Vec3d t;
+    for(unsigned int i = 0; i < nviews; ++i)
+    {
+      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].R, R);
+      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].t, t);
+      Mat(R).copyTo(Rs.getMatRef(i));
+      Mat(t).copyTo(Ts.getMatRef(i));
+    }
+
+    // Extract reconstructed points
+    size_t n_points =
+      (unsigned) libmv_reconstruction.euclidean_reconstruction.AllPoints().size();
+
+    points3d.create(3, n_points, depth);
+    Mat points3d_ = points3d.getMat();
+
+    for ( unsigned i = 0; i < n_points; ++i )
+      for ( int j = 0; j < 3; ++j )
+        points3d_.at<double>(j, i) =
+          libmv_reconstruction.euclidean_reconstruction.AllPoints()[i].X[j];
+
+    // Extract refined intrinsic parameters
+    eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+    Mat(Ka).copyTo(K.getMat());
+
+  }
+
 
 } // namespace cv
