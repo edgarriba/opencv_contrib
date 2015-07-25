@@ -56,10 +56,21 @@ int main(int argc, char* argv[])
   /// Reconstruct the scene using the 2d images
 
   std::vector<std::string> images_paths;
-  getdir( argv[1], images_paths );
+  //getdir( argv[1], images_paths );
+  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0001.png"));
+  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0002.png"));
+  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0003.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0004.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0005.png"));
 
   float fx = atof(argv[2]), fy = atof(argv[3]),
         cx = atof(argv[4]), cy = atof(argv[5]);
+
+  // right now by hand
+  fx = 1520;
+  fy = 1525;
+  cx = 246;
+  cy = 302;
 
   Matx33d K = Matx33d( fx,  0, cx,
                         0, fy, cy,

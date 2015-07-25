@@ -34,6 +34,7 @@ set(OPENCV_SFM_DEPS
   opencv_ts
   opencv_calib3d
   opencv_features2d
+  opencv_xfeatures2d
   opencv_viz
 )
 

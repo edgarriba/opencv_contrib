@@ -34,6 +34,7 @@
  */
 
 #include <opencv2/sfm/simple_pipeline.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 #include "libmv/simple_pipeline/bundle.h"
 #include "libmv/simple_pipeline/initialize_reconstruction.h"
@@ -178,8 +179,9 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
                                const cv::Matx33d &K,
                                T &libmv_reconstruction)
 {
-  Ptr<FeatureDetector> edetector = AKAZE::create();
-  Ptr<DescriptorExtractor> edescriber = AKAZE::create();
+  //Ptr<Feature2D> edetector = ORB::create(50000);
+  Ptr<Feature2D> edetector = AKAZE::create();
+  Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create();
 
   cout << "Initialize nViewMatcher ... ";
   libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
