@@ -38,6 +38,11 @@ set(OPENCV_SFM_DEPS
   opencv_viz
 )
 
+find_package( Eigen3 REQUIRED )
+if ( NOT EIGEN3_INCLUDE_DIR )
+    MESSAGE( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
+endif ()
+
 ocv_check_dependencies(${OPENCV_SFM_DEPS})
 ocv_include_directories("${OpenCV_SOURCE_DIR}/include/opencv")
 ocv_include_modules_recurse(${OPENCV_SFM_DEPS})
