@@ -42,9 +42,11 @@
 #include <opencv2/sfm/fundamental.hpp>
 #include <opencv2/sfm/numeric.hpp>
 #include <opencv2/sfm/projection.hpp>
-#include <opencv2/sfm/simple_pipeline.hpp>
 #include "opencv2/sfm/robust.hpp"
 #include <opencv2/sfm/triangulation.hpp>
+#if CERES_FOUND
+#include <opencv2/sfm/simple_pipeline.hpp>
+#endif
 
 //! @defgroup sfm Structure From Motion
 
@@ -63,6 +65,8 @@ namespace cv
   void
   triangulatePoints(InputArrayOfArrays points2d, InputArrayOfArrays projection_matrices,
                     OutputArray points3d);
+
+#if CERES_FOUND
 
   /** @brief Reconstruct 3d points from 2d correspondences without performing autocalibration.
    * @param points2d a vector of vectors of 2d points (the inner vector is per image)
@@ -129,6 +133,8 @@ namespace cv
   void
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               OutputArray K, OutputArray points3d, int method = 0);
+
+#endif
 
   /** @brief Computes the fundamental matrix from corresponding points in two views
    * @param x1 2xN Array of 2D points in view 1

@@ -33,6 +33,8 @@
  *
  */
 
+#if CERES_FOUND
+
 #include <opencv2/sfm/simple_pipeline.hpp>
 #include <opencv2/xfeatures2d.hpp>
 
@@ -284,3 +286,5 @@ template void libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(
   libmv_UncalibratedReconstruction &libmv_reconstruction);
 
 } // namespace cv
+
+#endif

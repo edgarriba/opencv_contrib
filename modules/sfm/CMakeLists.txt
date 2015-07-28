@@ -20,8 +20,19 @@ set(LIBMV_LIGHT_LIBS
   multiview
   multiview_test_data
   numeric
-  simple_pipeline
 )
+
+
+### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
+
+find_package( Ceres )
+
+if ( Ceres_FOUND )
+  add_definitions("-DCERES_FOUND=1")
+  list(APPEND LIBMV_LIGHT_LIBS simple_pipeline)
+else ()
+  add_definitions("-DCERES_FOUND=0")
+endif ()
 
 
 ### CHECK OPENCV SFM MODULE DEPENDENCIES ###
@@ -34,11 +45,6 @@ set(OPENCV_SFM_DEPS
   opencv_xfeatures2d
   opencv_viz
 )
-
-find_package(Ceres REQUIRED)
-if ( NOT CERES_INCLUDE_DIRS )
-    MESSAGE( FATAL_ERROR "Please point the environment variable CERES_INCLUDE_DIRS to the include directory of your Ceres installation.")
-endif ()
 
 ocv_check_dependencies(${OPENCV_SFM_DEPS})
 ocv_include_directories("${OpenCV_SOURCE_DIR}/include/opencv")

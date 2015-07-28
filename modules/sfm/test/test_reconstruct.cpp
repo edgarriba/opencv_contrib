@@ -60,6 +60,7 @@ check_projection_errors(const cv::Mat& X_estimated, const std::vector<Matx34d>& 
     }
 }
 
+#if CERES_FOUND
 
 TEST(Sfm_reconstruct, twoViewProjectiveOutliers)
 {
@@ -91,3 +92,5 @@ TEST(Sfm_reconstruct, twoViewProjectiveOutliers)
         Ps_estimated_d[i] = Ps_estimated[i];
     check_projection_errors(points3d_estimated, Ps_estimated_d, points2d, err_max2d);
 }
+
+#endif

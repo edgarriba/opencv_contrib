@@ -78,6 +78,9 @@ expectFundamentalProperties( const cv::Matx33d &F,
   }
 }
 
+
+#if CERES_FOUND
+
 void
 parser_2D_tracks( const string &_filename, libmv::Tracks &tracks )
 {
@@ -117,5 +120,7 @@ parser_2D_tracks( const string &_filename, libmv::Tracks &tracks )
         }
     }
 }
+
+#endif
 
 } // namespace cvtest

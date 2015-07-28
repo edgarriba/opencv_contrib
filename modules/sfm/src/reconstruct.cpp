@@ -33,6 +33,8 @@
  *
  */
 
+#if CERES_FOUND
+
 // Eigen
 #include <Eigen/Core>
 
@@ -375,5 +377,6 @@ namespace cv
 
   }
 
-
 } // namespace cv
+
+#endif

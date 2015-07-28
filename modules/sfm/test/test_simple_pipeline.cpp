@@ -42,6 +42,8 @@ using namespace cv;
 using namespace cvtest;
 using namespace std;
 
+#if CERES_FOUND
+
 TEST(Sfm_simple_pipeline, backyard)
 {
     //V3D::optimizerVerbosenessLevel = 0; // less logging messages
@@ -69,3 +71,5 @@ TEST(Sfm_simple_pipeline, backyard)
 
     EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
 }
+
+#endif
