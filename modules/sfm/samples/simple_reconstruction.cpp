@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     viz::WCloud cloud_widget(point_cloud, viz::Color::green());
     viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
     window_gt.showWidget("point_cloud", cloud_widget);
-    window_est.showWidget("point_cloud_est", cloud_est_widget);
+    //window_est.showWidget("point_cloud_est", cloud_est_widget);
 
     cout << "OK" << endl;
   }
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     cout << "Rendering Cameras  ... ";
 
     window_gt.showWidget("cameras_frames_and_lines_gt", viz::WTrajectory(path_gt, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
-    window_gt.showWidget("cameras_frustums_gt", viz::WTrajectoryFrustums(path_gt, K, 0.3, viz::Color::yellow()));
+    window_gt.showWidget("cameras_frustums_gt", viz::WTrajectoryFrustums(path_gt, K, 2.0, viz::Color::yellow()));
     window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
     window_est.showWidget("cameras_frustums_est", viz::WTrajectoryFrustums(path_est, K, 0.3, viz::Color::yellow()));
 
