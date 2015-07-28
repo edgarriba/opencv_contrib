@@ -10,10 +10,7 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CSS_FLAGS} "-fPIC")
 
 set(LIBMV_LIGHT_INCLUDES
   src/libmv_light
-  src/libmv_light/third_party/gflags
-  src/libmv_light/third_party/glog/src
   src/libmv_light/third_party/ssba
-  src/libmv_light/third_party/ceres/include
 )
 
 set(LIBMV_LIGHT_LIBS
@@ -38,9 +35,9 @@ set(OPENCV_SFM_DEPS
   opencv_viz
 )
 
-find_package( Eigen3 REQUIRED )
-if ( NOT EIGEN3_INCLUDE_DIR )
-    MESSAGE( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
+find_package(Ceres REQUIRED)
+if ( NOT CERES_INCLUDE_DIRS )
+    MESSAGE( FATAL_ERROR "Please point the environment variable CERES_INCLUDE_DIRS to the include directory of your Ceres installation.")
 endif ()
 
 ocv_check_dependencies(${OPENCV_SFM_DEPS})
