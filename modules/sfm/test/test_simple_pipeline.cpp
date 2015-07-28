@@ -37,8 +37,6 @@
 
 #include <opencv2/sfm/simple_pipeline.hpp>
 //#include "third_party/ssba/Math/v3d_optimization.h"// less logging messages
-//#include <opencv2/viz.hpp>        // only for visualization
-//#include <opencv2/core/eigen.hpp> // only for visualization
 
 using namespace cv;
 using namespace cvtest;
@@ -70,50 +68,4 @@ TEST(Sfm_simple_pipeline, backyard)
     cout << "libmv_reconstruction.error = " << libmv_reconstruction.error << endl;
 
     EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
-
-/*
-    // Extract data from reconstruction
-    libmv::vector<libmv::EuclideanPoint> points = libmv_reconstruction.reconstruction.AllPoints();
-    libmv::vector<libmv::EuclideanCamera> cameras = libmv_reconstruction.reconstruction.AllCameras();
-
-    size_t n_points = (unsigned) points.size();
-
-    cv::Mat points3d = cv::Mat(3, n_points, CV_64F);
-
-    for ( unsigned i = 0; i < n_points; ++i )
-      for ( int j = 0; j < 3; ++j )
-        points3d.at<double>(j, i) = points[i].X[j];
-
-    std::vector<cv::Affine3d> path;
-    for (size_t i = 0; i < cameras.size(); ++i)
-    {
-      cv::Mat R, t;
-      eigen2cv(cameras[i].R, R);
-      eigen2cv(cameras[i].t, t);
-
-      path.push_back(cv::Affine3d(R,t));
-    }
-
-    /// Create a 3D window
-    viz::Viz3d myWindow("Coordinate Frame");
-
-    /// Add coordinate axes
-    myWindow.showWidget("Coordinate Widget", viz::WCoordinateSystem());
-
-    vector<Vec3f> point_cloud;
-    for (int i = 0; i < n_points; ++i) {
-        // recover ground truth points3d
-        Vec3f point3d((float) points3d.at<double>(0, i),
-                      (float) points3d.at<double>(1, i),
-                      (float) points3d.at<double>(2, i));
-        point_cloud.push_back(point3d);
-    }
-
-    /// Add the pointcloud
-    viz::WCloud cloud_widget(point_cloud, viz::Color::green());
-    myWindow.showWidget("point_cloud", cloud_widget);
-    myWindow.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
-
-    myWindow.spin();
-*/
 }
