@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "../test/scene.cpp"
+
 using namespace std;
 using namespace cv;
 
@@ -23,10 +25,10 @@ static void help() {
       << endl;
 }
 
-void
-generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
-              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
-              std::vector<Mat_<double> > & points2d );
+//void
+//generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+//              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+//              std::vector<Mat_<double> > & points2d );
 
 
 int main(int argc, char* argv[])
@@ -58,14 +60,15 @@ int main(int argc, char* argv[])
   std::vector< Matx34d > Ps;
   Matx33d K;
   Mat_<double> points3d;
-  generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
+  const bool is_projective = true;
+  generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d, points2d);
+  //generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
 
 
   /// Reconstruct the scene using the 2d correspondences
   Matx33d K_ = K;
   std::vector<cv::Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
-  const bool is_projective = true;
   const bool has_outliers = false;
   const bool is_sequence = true;
   reconstruct(points2d, Rs_est, ts_est, K_, points3d_estimated, is_projective, has_outliers, is_sequence);
@@ -197,80 +200,80 @@ int main(int argc, char* argv[])
 }
 
 
-void
-generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
-              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
-              std::vector<Mat_<double> > & points2d)
-{
-  R.resize(n_views);
-  t.resize(n_views);
-
-  cv::RNG rng;
-
-  const float size_scene = 10.0f, offset_scene = 10.0f;
-
-  // Generate a bunch of random 3d points in a cube
-  points3d.create(3, n_points);
-  rng.fill(points3d, cv::RNG::UNIFORM, -size_scene/2, size_scene/2);
-
-  // Generate random intrinsics
-  K = Matx33d(500,   0, 320,
-                0, 500, 240,
-                0,   0,   1);
-
-  const float r = 2*size_scene;
-  const float cx = 0, cy = 0, cz = 0;
-
-  for (size_t i = 0; i < n_views; ++i)
-  {
-    // get the current angle
-    const float theta = 2.0f * CV_PI * float(i) / float(n_views);
-
-    // set rotation around x and y axis and apply a 90deg rotation
-    const Vec3d vecx(-CV_PI/2, 0, 0),
-                vecy(0, -CV_PI/2-theta, 0),
-                vecz(0, 0, 0);
-
-    Matx33d Rx, Ry, Rz;
-    Rodrigues(vecx, Rx);
-    Rodrigues(vecy, Ry);
-    Rodrigues(vecz, Rz);
-
-    // compute compute rotation matrix
-    R[i] = Rx * Ry * Rz;
-
-    const float x = r * cosf(theta), // calculate the x component
-                y = r * sinf(theta); // calculate the y component
-
-    // compute translation vector
-    t[i] = cv::Vec3d(x + cx, y + cy, cz);//output vertex
-  }
-
-  // Compute projection matrices
-  P.resize(n_views);
-  for (size_t i = 0; i < n_views; ++i)
-  {
-    const Matx33d K3 = K, R3 = R[i];
-    const Vec3d t3 = t[i];
-    P_From_KRt(K3, R3, t3, P[i]);
-  }
-
-  // Compute homogeneous 3d points
-  Mat_<double> points3d_homogeneous(4, n_points);
-  points3d.copyTo(points3d_homogeneous.rowRange(0, 3));
-  points3d_homogeneous.row(3).setTo(1);
-
-  // Project those points for every view
-  points2d.resize(n_views);
-  for (size_t i = 0; i < n_views; ++i)
-  {
-    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
-    points2d[i].create(2, n_points);
-    for (unsigned char j = 0; j < 2; ++j)
-      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
-  }
-
-// TODO: remove a certain number of points per view
-// TODO: add a certain number of outliers per view
-
-}
+//void
+//generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+//              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+//              std::vector<Mat_<double> > & points2d)
+//{
+//  R.resize(n_views);
+//  t.resize(n_views);
+//
+//  cv::RNG rng;
+//
+//  const float size_scene = 10.0f, offset_scene = 10.0f;
+//
+//  // Generate a bunch of random 3d points in a cube
+//  points3d.create(3, n_points);
+//  rng.fill(points3d, cv::RNG::UNIFORM, -size_scene/2, size_scene/2);
+//
+//  // Generate random intrinsics
+//  K = Matx33d(500,   0, 320,
+//                0, 500, 240,
+//                0,   0,   1);
+//
+//  const float r = 2*size_scene;
+//  const float cx = 0, cy = 0, cz = 0;
+//
+//  for (size_t i = 0; i < n_views; ++i)
+//  {
+//    // get the current angle
+//    const float theta = 2.0f * CV_PI * float(i) / float(n_views);
+//
+//    // set rotation around x and y axis and apply a 90deg rotation
+//    const Vec3d vecx(-CV_PI/2, 0, 0),
+//                vecy(0, -CV_PI/2-theta, 0),
+//                vecz(0, 0, 0);
+//
+//    Matx33d Rx, Ry, Rz;
+//    Rodrigues(vecx, Rx);
+//    Rodrigues(vecy, Ry);
+//    Rodrigues(vecz, Rz);
+//
+//    // compute compute rotation matrix
+//    R[i] = Rx * Ry * Rz;
+//
+//    const float x = r * cosf(theta), // calculate the x component
+//                y = r * sinf(theta); // calculate the y component
+//
+//    // compute translation vector
+//    t[i] = cv::Vec3d(x + cx, y + cy, cz);//output vertex
+//  }
+//
+//  // Compute projection matrices
+//  P.resize(n_views);
+//  for (size_t i = 0; i < n_views; ++i)
+//  {
+//    const Matx33d K3 = K, R3 = R[i];
+//    const Vec3d t3 = t[i];
+//    P_From_KRt(K3, R3, t3, P[i]);
+//  }
+//
+//  // Compute homogeneous 3d points
+//  Mat_<double> points3d_homogeneous(4, n_points);
+//  points3d.copyTo(points3d_homogeneous.rowRange(0, 3));
+//  points3d_homogeneous.row(3).setTo(1);
+//
+//  // Project those points for every view
+//  points2d.resize(n_views);
+//  for (size_t i = 0; i < n_views; ++i)
+//  {
+//    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
+//    points2d[i].create(2, n_points);
+//    for (unsigned char j = 0; j < 2; ++j)
+//      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
+//  }
+//
+//// TODO: remove a certain number of points per view
+//// TODO: add a certain number of outliers per view
+//
+//}
