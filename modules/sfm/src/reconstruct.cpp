@@ -33,6 +33,8 @@
  *
  */
 
+#if CERES_FOUND
+
 // Eigen
 #include <Eigen/Core>
 
@@ -59,8 +61,6 @@ using namespace std;
 
 namespace cv
 {
-
-#if CERES_FOUND
 
   //  Reconstruction function for API
   void
@@ -377,33 +377,7 @@ namespace cv
 
   }
 
-#else /* HAVE_CERES */
-
-  //  Reconstruction function for API
-  void
-  reconstruct(const InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, OutputArray points3d,
-    bool is_projective, bool has_outliers, bool is_sequence)
-  { CV_Error(cv::Error::StsNotImplemented, "libceres-dev required to use reconstruction API"); }
-
-  void
-  reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K,
-              OutputArray points3d, bool is_projective, bool has_outliers, bool is_sequence)
-  { CV_Error(cv::Error::StsNotImplemented, "libceres-dev required to use reconstruction API"); }
-
-  void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K)
-  { CV_Error(cv::Error::StsNotImplemented, "libceres-dev required to use reconstruction API"); }
-
-  void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
-              InputOutputArray K, OutputArray points3d, bool is_projective)
-  { CV_Error(cv::Error::StsNotImplemented, "libceres-dev required to use reconstruction API"); }
-
-  void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
-              OutputArray K, OutputArray points3d, int method)
-  { CV_Error(cv::Error::StsNotImplemented, "libceres-dev required to use reconstruction API"); }
+} // namespace cv
 
 #endif /* HAVE_CERES */
 
-} // namespace cv
