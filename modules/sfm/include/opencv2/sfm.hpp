@@ -66,6 +66,8 @@ namespace cv
   triangulatePoints(InputArrayOfArrays points2d, InputArrayOfArrays projection_matrices,
                     OutputArray points3d);
 
+  #if defined(CV_DOXYGEN) || defined(CERES_FOUND)
+
   /** @brief Reconstruct 3d points from 2d correspondences without performing autocalibration.
    * @param points2d a vector of vectors of 2d points (the inner vector is per image)
    * @param projection_matrices The 3 x 4 projections matrices of each image
@@ -129,6 +131,8 @@ namespace cv
   void
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               OutputArray K, OutputArray points3d, int method = 0);
+
+  #endif /* CV_DOXYGEN || CERES_FOUND */
 
   /** @brief Computes the fundamental matrix from corresponding points in two views
    * @param x1 2xN Array of 2D points in view 1
