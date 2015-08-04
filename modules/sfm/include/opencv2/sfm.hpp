@@ -99,9 +99,6 @@ namespace cv
    * @param projection_matrices The 3 x 4 projections matrices of each image
    * @param points3d the 3d points
    * @param K The intrinsic parameters of the camera
-   * @param is_projective if true, the cameras are supposed to be projective
-   * @param has_outliers if true, the correspondences are not trusted
-   * @param is_sequence if true, the data is assumed to be from tracking in a video sequence
    */
   CV_EXPORTS
   void
@@ -126,6 +123,7 @@ namespace cv
    * @param Ts The 3 x 1 translations of the camera
    * @param points3d the 3d points
    * @param K The intrinsic parameters of the camera
+   * @param method used to call the uncalibrated pipeline (hacked by now)
    */
   CV_EXPORTS
   void
