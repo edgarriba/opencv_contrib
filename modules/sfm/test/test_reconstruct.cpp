@@ -93,4 +93,4 @@ TEST(Sfm_reconstruct, twoViewProjectiveOutliers)
     check_projection_errors(points3d_estimated, Ps_estimated_d, points2d, err_max2d);
 }
 
-#endif
+#endif /* CERES_FOUND */

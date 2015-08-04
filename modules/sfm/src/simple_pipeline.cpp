@@ -181,9 +181,10 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
                                const cv::Matx33d &K,
                                T &libmv_reconstruction)
 {
-  //Ptr<Feature2D> edetector = ORB::create(50000);
-  Ptr<Feature2D> edetector = AKAZE::create();
-  Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create();
+  Ptr<Feature2D> edetector = ORB::create(10000);
+  //Ptr<Feature2D> edetector = AKAZE::create();
+  //Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
+  Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create(64, true, 4);
 
   cout << "Initialize nViewMatcher ... ";
   libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
@@ -199,7 +200,8 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
 
 
   // Initial reconstruction
-  const int keyframe1 = 1, keyframe2 = matches.NumImages();
+  //const int keyframe1 = 1, keyframe2 = matches.NumImages();
+  const int keyframe1 = 1, keyframe2 = 2;
 
   const double focal_length = K(0,0);
   const double principal_x = K(0,2), principal_y = K(1,2), k1 = 0, k2 = 0, k3 = 0;

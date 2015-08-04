@@ -84,8 +84,7 @@ expectFundamentalProperties( const cv::Matx33d &F,
 void
 parser_2D_tracks( const string &_filename, libmv::Tracks &tracks )
 {
-    string filename = string(TEST_DATA_DIR) + _filename;
-    ifstream file( filename.c_str() );
+    ifstream file( _filename.c_str() );
 
     double x, y;
     string str;

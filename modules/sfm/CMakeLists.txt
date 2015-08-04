@@ -73,8 +73,6 @@ ocv_create_module( ${LIBMV_LIGHT_LIBS} )
 
 ### OPENCV SFM TESTS ###
 
-ADD_DEFINITIONS(-DTEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/testdata/cv/sfm/")
-
 ocv_add_accuracy_tests()
 
 

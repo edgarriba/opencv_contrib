@@ -33,6 +33,8 @@
  *
  */
 
+#if CERES_FOUND
+
 #include "test_precomp.hpp"
 
 #include <opencv2/sfm/simple_pipeline.hpp>
@@ -42,15 +44,21 @@ using namespace cv;
 using namespace cvtest;
 using namespace std;
 
-#if CERES_FOUND
+const string SFM_DIR = "sfm";
+const string TRACK_FILENAME = "backyard_tracks.txt";
 
 TEST(Sfm_simple_pipeline, backyard)
 {
     //V3D::optimizerVerbosenessLevel = 0; // less logging messages
 
+    string trackFilename =
+      string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
+
+    cout << trackFilename << endl;
+
     // Get tracks from file: check backyard.blend file
     libmv::Tracks tracks;
-    parser_2D_tracks( "backyard_tracks.txt", tracks );
+    parser_2D_tracks( trackFilename, tracks );
 
     // Initial reconstruction
     int keyframe1 = 1, keyframe2 = 30;
@@ -72,4 +80,4 @@ TEST(Sfm_simple_pipeline, backyard)
     EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
 }
 
-#endif
+#endif /* CERES_FOUND */
