@@ -80,4 +80,6 @@ ocv_add_accuracy_tests()
 
 ### OPENCV SFM SAMPLES ###
 
-ocv_add_samples(opencv_viz)
+if ( Ceres_FOUND )
+  ocv_add_samples(opencv_viz)
+endif ()
