@@ -134,7 +134,7 @@ namespace cv
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               OutputArray K, OutputArray points3d, int method = 0);
 
-#endif
+#endif /* CERES_FOUND */
 
   /** @brief Computes the fundamental matrix from corresponding points in two views
    * @param x1 2xN Array of 2D points in view 1
