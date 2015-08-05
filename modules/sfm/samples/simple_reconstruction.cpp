@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-#include "../test/scene.cpp"
+//#include "../test/scene.cpp"
 
 using namespace std;
 using namespace cv;
@@ -25,11 +25,10 @@ static void help() {
       << endl;
 }
 
-//void
-//generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
-//              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
-//              std::vector<Mat_<double> > & points2d );
-
+void
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+              std::vector<Mat_<double> > & points2d );
 
 int main(int argc, char* argv[])
 {
@@ -61,8 +60,8 @@ int main(int argc, char* argv[])
   Matx33d K;
   Mat_<double> points3d;
   const bool is_projective = true;
-  generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d, points2d);
-  //generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
+  //generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d, points2d);
+  generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
 
 
   /// Reconstruct the scene using the 2d correspondences
@@ -136,7 +135,7 @@ int main(int argc, char* argv[])
     point_cloud_est.push_back(point3d_est);
   }
 
-  cout << "OK" << endl;
+  cout << "[DONE]" << endl;
 
 
   /// Recovering cameras
@@ -145,50 +144,54 @@ int main(int argc, char* argv[])
   std::vector<Affine3d> path_gt;
   for (size_t i = 0; i < Rs.size(); ++i)
     path_gt.push_back(Affine3d(Rs[i],ts[i]));
-  path_gt.push_back(Affine3d(Rs[0],ts[0]));
+  if ( Rs.size() > 0 )
+    path_gt.push_back(Affine3d(Rs[0],ts[0]));
 
   std::vector<Affine3d> path_est;
   for (size_t i = 0; i < Rs_est.size(); ++i)
     path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
-  path_est.push_back(Affine3d(Rs_est[0],ts_est[0]));
+  if ( Rs_est.size() > 0 )
+    path_est.push_back(Affine3d(Rs_est[0],ts_est[0]));
 
-  cout << "OK" << endl;
+  cout << "[DONE]" << endl;
 
 
   /// Add the pointcloud
-  if ( !point_cloud.empty() && !point_cloud_est.empty() )
-  {
-    cout << "Rendering points   ... ";
+  cout << "Rendering points ... ";
 
+  if ( point_cloud.size() > 0 )
+  {
     viz::WCloud cloud_widget(point_cloud, viz::Color::green());
-    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
     window_gt.showWidget("point_cloud", cloud_widget);
-    //window_est.showWidget("point_cloud_est", cloud_est_widget);
+  }
 
-    cout << "OK" << endl;
-  }
-  else
+  if ( point_cloud_est.size() > 0 )
   {
-    cout << "Cannot render points: Empty pointcloud" << endl;
+    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
+    window_est.showWidget("point_cloud_est", cloud_est_widget);
+
   }
+
+  cout << "[DONE]" << endl;
 
 
   /// Add cameras
-  if ( !path_gt.empty() && !path_est.empty() )
-  {
-    cout << "Rendering Cameras  ... ";
+  cout << "Rendering Cameras  ... ";
 
+  if ( path_gt.size() > 0 )
+  {
     window_gt.showWidget("cameras_frames_and_lines_gt", viz::WTrajectory(path_gt, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
     window_gt.showWidget("cameras_frustums_gt", viz::WTrajectoryFrustums(path_gt, K, 2.0, viz::Color::yellow()));
+  }
+
+  if ( path_est.size() > 0 )
+  {
     window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
     window_est.showWidget("cameras_frustums_est", viz::WTrajectoryFrustums(path_est, K, 0.3, viz::Color::yellow()));
+  }
 
-    cout << "OK" << endl;
-  }
-  else
-  {
-    cout << "Cannot render the cameras: Empty path" << endl;
-  }
+  cout << "[DONE]" << endl;
+
 
   /// Wait for key 'q' to close the window
   cout << endl << "Press 'q' to close each windows ... " << endl;
@@ -200,80 +203,107 @@ int main(int argc, char* argv[])
 }
 
 
-//void
-//generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
-//              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
-//              std::vector<Mat_<double> > & points2d)
-//{
-//  R.resize(n_views);
-//  t.resize(n_views);
-//
-//  cv::RNG rng;
-//
-//  const float size_scene = 10.0f, offset_scene = 10.0f;
-//
-//  // Generate a bunch of random 3d points in a cube
-//  points3d.create(3, n_points);
-//  rng.fill(points3d, cv::RNG::UNIFORM, -size_scene/2, size_scene/2);
-//
-//  // Generate random intrinsics
-//  K = Matx33d(500,   0, 320,
-//                0, 500, 240,
-//                0,   0,   1);
-//
-//  const float r = 2*size_scene;
-//  const float cx = 0, cy = 0, cz = 0;
-//
-//  for (size_t i = 0; i < n_views; ++i)
-//  {
-//    // get the current angle
-//    const float theta = 2.0f * CV_PI * float(i) / float(n_views);
-//
-//    // set rotation around x and y axis and apply a 90deg rotation
-//    const Vec3d vecx(-CV_PI/2, 0, 0),
-//                vecy(0, -CV_PI/2-theta, 0),
-//                vecz(0, 0, 0);
-//
-//    Matx33d Rx, Ry, Rz;
-//    Rodrigues(vecx, Rx);
-//    Rodrigues(vecy, Ry);
-//    Rodrigues(vecz, Rz);
-//
-//    // compute compute rotation matrix
-//    R[i] = Rx * Ry * Rz;
-//
-//    const float x = r * cosf(theta), // calculate the x component
-//                y = r * sinf(theta); // calculate the y component
-//
-//    // compute translation vector
-//    t[i] = cv::Vec3d(x + cx, y + cy, cz);//output vertex
-//  }
-//
-//  // Compute projection matrices
-//  P.resize(n_views);
-//  for (size_t i = 0; i < n_views; ++i)
-//  {
-//    const Matx33d K3 = K, R3 = R[i];
-//    const Vec3d t3 = t[i];
-//    P_From_KRt(K3, R3, t3, P[i]);
-//  }
-//
-//  // Compute homogeneous 3d points
-//  Mat_<double> points3d_homogeneous(4, n_points);
-//  points3d.copyTo(points3d_homogeneous.rowRange(0, 3));
-//  points3d_homogeneous.row(3).setTo(1);
-//
-//  // Project those points for every view
-//  points2d.resize(n_views);
-//  for (size_t i = 0; i < n_views; ++i)
-//  {
-//    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
-//    points2d[i].create(2, n_points);
-//    for (unsigned char j = 0; j < 2; ++j)
-//      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
-//  }
-//
-//// TODO: remove a certain number of points per view
-//// TODO: add a certain number of outliers per view
-//
-//}
+void
+generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vector<Matx33d> & R,
+              std::vector<Vec3d> & t, std::vector<Matx34d> & P, Mat_<double> & points3d,
+              std::vector<Mat_<double> > & points2d)
+{
+  R.resize(n_views);
+  t.resize(n_views);
+
+  cv::RNG rng;
+
+  const double size_scene = 10.0f, offset_scene = 10.0f;
+
+  // Generate a bunch of random 3d points in a cube
+  points3d.create(3, n_points);
+  //rng.fill(points3d, cv::RNG::UNIFORM, -size_scene/2, size_scene/2);
+
+  // Generate a bunch of random 3d points in a cube surface
+  for (size_t i = 0; i < n_points; ++i)
+  {
+    int face = rng.uniform(1, 7);
+    double u = rng.uniform( (double)0, size_scene),
+           v = rng.uniform( (double)0, size_scene);
+
+    double x = 0, y = 0, z = 0;
+
+    if ( face == 1 )
+      x = u, y = 0, z = v;
+    else if ( face == 2 )
+      x = u, y = size_scene, z = v;
+    else if ( face == 3 )
+      x = 0, y = u, z = v;
+    else if ( face == 4 )
+      x = size_scene, y = u, z = v;
+    else if ( face == 5 )
+      x = u, y = v, z = 0;
+    else if ( face == 6 )
+      x = u, y = v, z = size_scene;
+
+    points3d.at<double>(0, i) = x - offset_scene/2;
+    points3d.at<double>(1, i) = y - offset_scene/2;
+    points3d.at<double>(2, i) = z - offset_scene/2;
+  }
+
+  // Generate random intrinsics
+  K = Matx33d(500,   0, 320,
+                0, 500, 240,
+                0,   0,   1);
+
+  const float r = 2*size_scene;
+  const float cx = 0, cy = 0, cz = 0;
+
+  for (size_t i = 0; i < n_views; ++i)
+  {
+    // get the current angle
+    const float theta = 2.0f * CV_PI * float(i) / float(n_views);
+
+    // set rotation around x and y axis and apply a 90deg rotation
+    const Vec3d vecx(-CV_PI/2, 0, 0),
+                vecy(0, -CV_PI/2-theta, 0),
+                vecz(0, 0, 0);
+
+    Matx33d Rx, Ry, Rz;
+    Rodrigues(vecx, Rx);
+    Rodrigues(vecy, Ry);
+    Rodrigues(vecz, Rz);
+
+    // compute compute rotation matrix
+    R[i] = Rx * Ry * Rz;
+
+    const float x = r * cosf(theta), // calculate the x component
+                y = r * sinf(theta); // calculate the y component
+
+    // compute translation vector
+    t[i] = cv::Vec3d(x + cx, y + cy, cz); //output vertex
+  }
+
+  // Compute projection matrices
+  P.resize(n_views);
+  for (size_t i = 0; i < n_views; ++i)
+  {
+    const Matx33d K3 = K, R3 = R[i];
+    const Vec3d t3 = t[i];
+    P_From_KRt(K3, R3, t3, P[i]);
+  }
+
+  // Compute homogeneous 3d points
+  Mat_<double> points3d_homogeneous(4, n_points);
+  points3d.copyTo(points3d_homogeneous.rowRange(0, 3));
+  points3d_homogeneous.row(3).setTo(1);
+
+  // Project those points for every view
+  points2d.resize(n_views);
+  for (size_t i = 0; i < n_views; ++i)
+  {
+    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
+    points2d[i].create(2, n_points);
+    for (unsigned char j = 0; j < 2; ++j)
+      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
+  }
+
+// TODO: remove a certain number of points per view
+// TODO: add a certain number of outliers per view
+
+}
