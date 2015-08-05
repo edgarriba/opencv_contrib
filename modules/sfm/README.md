@@ -17,7 +17,7 @@ Here are the instructions on how to install the Ceres Solver on your machine (Li
 Run
 ---
 
-There are some samples provided in order to show reconstruction functionality use.
+There are some samples provided in order to show the reconstruction functionality use.
 
 **recon2v.cpp**
 
