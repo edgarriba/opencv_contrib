@@ -6,8 +6,6 @@
 #include <fstream>
 #include <string>
 
-#include "recon2v.hpp"
-
 using namespace std;
 using namespace cv;
 
