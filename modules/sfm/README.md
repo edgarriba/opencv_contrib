@@ -23,7 +23,9 @@ There are some samples provided in order to show the reconstruction functionalit
 
 This program shows the two view reconstruction capabilities in the OpenCV Structure From Motion (SFM) module. It uses the following data from the VGG datasets at "reconv2 _pts.txt" where the first line has the number of points and each subsequent line has entries for matched points as: x1 y1 x2 y2. Finally, the script reconstruct the given set of correspondences and show the result using the OpenCV 3d visualizer (viz).
 
-![](data/recon2v.jpg)
+<p align="center">
+  <img src="data/recon2v.jpg">
+</p>
 
 **simple_reconstruction.cpp**
 
