@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
 
 
   /// Add the pointcloud
-  cout << "Rendering points ... ";
+  cout << "Rendering points   ... ";
 
   if ( point_cloud.size() > 0 )
   {
@@ -241,18 +241,24 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
     else if ( face == 6 )
       x = u, y = v, z = size_scene;
 
-    points3d.at<double>(0, i) = x - offset_scene/2;
-    points3d.at<double>(1, i) = y - offset_scene/2;
-    points3d.at<double>(2, i) = z - offset_scene/2;
+    points3d.at<double>(0, i) = x + offset_scene - size_scene/2;
+    points3d.at<double>(1, i) = y + offset_scene - size_scene/2;
+    points3d.at<double>(2, i) = z + offset_scene - size_scene/2;
   }
 
-  // Generate random intrinsics
-  K = Matx33d(500,   0, 320,
-                0, 500, 240,
-                0,   0,   1);
+  // Generate camera intrinsics
+  const double f = 500;           // focal length in pixels
+  const double img_width  = 640;  // image width  in pixels
+  const double img_height = 480;  // image heigth in pixels
+  const double cx = img_width/2;  // optical center in x direction
+  const double cy = img_height/2; // optical center in y direction
 
-  const float r = 2*size_scene;
-  const float cx = 0, cy = 0, cz = 0;
+  K = Matx33d(f, 0, cx,
+              0, f, cy,
+              0,  0, 1);
+
+  // Generate cameras
+  const float r = 2*size_scene; // camera distance in front of the object
 
   for (size_t i = 0; i < n_views; ++i)
   {
@@ -260,8 +266,8 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
     const float theta = 2.0f * CV_PI * float(i) / float(n_views);
 
     // set rotation around x and y axis and apply a 90deg rotation
-    const Vec3d vecx(-CV_PI/2, 0, 0),
-                vecy(0, -CV_PI/2-theta, 0),
+    const Vec3d vecx(CV_PI/2, 0, 0),
+                vecy(0, 3*CV_PI/2+theta, 0),
                 vecz(0, 0, 0);
 
     Matx33d Rx, Ry, Rz;
@@ -269,14 +275,14 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
     Rodrigues(vecy, Ry);
     Rodrigues(vecz, Rz);
 
-    // compute compute rotation matrix
+    // compute rotation matrix
     R[i] = Rx * Ry * Rz;
 
     const float x = r * cosf(theta), // calculate the x component
                 y = r * sinf(theta); // calculate the y component
 
     // compute translation vector
-    t[i] = cv::Vec3d(x + cx, y + cy, cz); //output vertex
+    t[i] = cv::Vec3d(x + offset_scene, y + offset_scene, offset_scene); //output vertex
   }
 
   // Compute projection matrices
@@ -297,10 +303,32 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
   points2d.resize(n_views);
   for (size_t i = 0; i < n_views; ++i)
   {
-    const Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
+    Mat_<double> points2d_tmp = cv::Mat(P[i]) * points3d_homogeneous;
     points2d[i].create(2, n_points);
+
     for (unsigned char j = 0; j < 2; ++j)
-      cv::Mat(points2d_tmp.row(j) / points2d_tmp.row(2)).copyTo(points2d[i].row(j));
+      cv::Mat(points2d_tmp.row(j) / (points2d_tmp.row(2))).copyTo(points2d[i].row(j));
+
+    // check all points for this view
+    for (int j = 0; j < n_points; ++j)
+    {
+      Vec2d pt = points2d[i].col(j);
+
+      // check if point is out of this view and set as NaN
+      if ( pt[0] < 0 || pt[0] > img_width ||
+           pt[1] < 0 || pt[1] > img_height )
+      {
+        cout << pt << endl;
+        cv::Mat(Vec2d(-1,-1)).copyTo(points2d[i].col(j));
+        //cv::Mat_<double>(2,1,-1).copyTo(points2d[i].col(j));
+      }
+      else
+      {
+        cout << "----> " << pt << endl;
+      }
+
+    }
+
   }
 
 // TODO: remove a certain number of points per view
