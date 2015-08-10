@@ -20,7 +20,7 @@ static void help() {
       << " OpenCV Structure From Motion (SFM) module.\n"
       << " It reconstruct a scene from a set of random 2D images \n"
       << " Usage:\n"
-      << "        example_sfm_nView_reconstruction <path_to_images_dir> <fx> <fy> <cx> <cy>\n"
+      << "        example_sfm_unordered_scene_reconstruction <path_to_images_dir> <fx> <fy> <cx> <cy>\n"
       << " where: path_to_images_dir is the images directory absolute path into your system. \n"
       << "        The directory must only contain images with the same size and taken with \n"
       << "        the same camera. \n"
@@ -57,20 +57,43 @@ int main(int argc, char* argv[])
 
   std::vector<std::string> images_paths;
   //getdir( argv[1], images_paths );
-  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0001.png"));
-  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0002.png"));
-  images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0003.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0001.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0002.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0003.png"));
   //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0004.png"));
-  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0005.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0006.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0007.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0008.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0009.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0010.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0011.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0012.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0013.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0014.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0015.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0016.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0017.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0018.png"));
+  //images_paths.push_back(string("/home/eriba/Desktop/files_test2/temple0019.png"));
+
+  images_paths.push_back(string("/home/eriba/Desktop/files_test1/resized_IMG_2889.jpg"));
+  images_paths.push_back(string("/home/eriba/Desktop/files_test1/resized_IMG_2890.jpg"));
+  images_paths.push_back(string("/home/eriba/Desktop/files_test1/resized_IMG_2891.jpg"));
+  images_paths.push_back(string("/home/eriba/Desktop/files_test1/resized_IMG_2892.jpg"));
 
   float fx = atof(argv[2]), fy = atof(argv[3]),
         cx = atof(argv[4]), cy = atof(argv[5]);
 
   // right now by hand
-  fx = 1520;
-  fy = 1525;
-  cx = 246;
-  cy = 302;
+  //fx = 1520;
+  //fy = 1525;
+  //cx = 246;
+  //cy = 302;
+
+  fx = 19.*480./22.3;
+  fy = 19.*718./19.8;
+  cx = 480.;
+  cy = 718.;
 
   Matx33d K = Matx33d( fx,  0, cx,
                         0, fy, cy,

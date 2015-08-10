@@ -16,7 +16,7 @@ static void help() {
 			<< " OpenCV Structure From Motion (SFM) module.\n"
 			<< " It uses the following data from the VGG datasets at ...\n"
 			<< " Usage:\n"
-			<< "       reconv2 _pts.txt \n "
+			<< "       reconv2_pts.txt \n "
 			<< " where the first line has the number of points and each subsequent \n"
 			<< " line has entries for matched points as: \n"
 			<< " x1 y1 x2 y2 \n"

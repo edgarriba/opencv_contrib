@@ -68,6 +68,8 @@ namespace cv
     bool is_projective, bool has_outliers, bool is_sequence)
   {
     const int nviews = points2d.total();
+    CV_Assert( nviews >= 2 );
+
     Matx33d F;
 
     // OpenCV data types
@@ -130,11 +132,13 @@ namespace cv
 
   }
 
+
   void
   reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K,
               OutputArray points3d, bool is_projective, bool has_outliers, bool is_sequence)
   {
     const int nviews = points2d.total();
+    CV_Assert( nviews >= 2 );
 
     std::vector<Mat> pts2d;
     points2d.getMatVector(pts2d);
@@ -161,7 +165,6 @@ namespace cv
     }
     else if (nviews > 2)
     {
-
       Ka = K.getMat();
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
 
@@ -174,13 +177,10 @@ namespace cv
         parser_2D_tracks( pts2d, tracks );
       }
       else
-      {
-
-
-      }
+      { /*TODO: think in something*/ }
 
       // Initial reconstruction
-      const int keyframe1 = 1, keyframe2 = nviews;
+      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
 
       // Camera data
       const double focal_length = Ka(0,0);
@@ -219,7 +219,6 @@ namespace cv
       // Extract refined intrinsic parameters
       eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
       Mat(Ka).copyTo(K.getMat());
-
     }
 
   }
@@ -230,6 +229,7 @@ namespace cv
   {
     Matx33d Ka = K.getMat();
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
+    CV_Assert( images.size() >= (unsigned)2 );
 
     libmv_ProjectiveReconstruction libmv_reconstruction;
     libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(images, Ka, libmv_reconstruction);
@@ -266,6 +266,7 @@ namespace cv
   {
     Matx33d Ka = K.getMat();
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
+    CV_Assert( images.size() >= (unsigned)2 );
 
     if ( is_projective )
     {
@@ -324,7 +325,7 @@ namespace cv
 
   }
 
-
+  //TODO: ONLY CALLS UNCALIBRATED PIPELINE. DECIDE TO INCLUDE OR NOT
   void
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               OutputArray K, OutputArray points3d, int method)

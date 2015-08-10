@@ -54,8 +54,6 @@ TEST(Sfm_simple_pipeline, backyard)
     string trackFilename =
       string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
 
-    cout << trackFilename << endl;
-
     // Get tracks from file: check backyard.blend file
     libmv::Tracks tracks;
     parser_2D_tracks( trackFilename, tracks );

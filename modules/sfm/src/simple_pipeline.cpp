@@ -229,10 +229,15 @@ parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks )
     for (int track = 1; track <= ntracks; ++track)
     {
       const Vec2d track_pt = points2d[frame-1].col(track-1);
-      if ( track_pt[0] != -1 && track_pt[1] != -1 )
+      if ( ( track_pt[0] != 0 && track_pt[1] != 0 ) &&
+           ( track_pt[0] != -1 && track_pt[1] != -1 ) )
+      {
+        //cout << frame << " " << track << " " << track_pt << endl;
         tracks.Insert(frame, track, track_pt[0], track_pt[1]);
+      }
 
     }
+
   }
 }
 
