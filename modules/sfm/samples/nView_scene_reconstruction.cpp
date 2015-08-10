@@ -64,7 +64,7 @@ int main(int argc, char** argv)
   parser_2D_tracks( argv[1], points2d );
 
   // Set the camera calibration matrix
-  double f = atoi(argv[2]), cx = atoi(argv[3]), cy = atoi(argv[4]);
+  double f = atof(argv[2]), cx = atof(argv[3]), cy = atof(argv[4]);
 
   Matx33d K = Matx33d(f, 0, cx,
                       0, f, cy,
