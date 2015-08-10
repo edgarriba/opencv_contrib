@@ -42,7 +42,7 @@ Finally, the script reconstructs the given set of tracked points and show the re
   <img src="samples/data/nView2.jpg" width="400" height="400">
 </p>
 
-**random_scene_reconstruction.cpp**
+**unordered_scene_reconstruction.cpp**
 
 //TODO
 
