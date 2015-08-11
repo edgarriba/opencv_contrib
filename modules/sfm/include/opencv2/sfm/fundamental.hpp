@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_FUNDAMENTAL_HPP__
 #define __OPENCV_SFM_FUNDAMENTAL_HPP__
 
-#ifdef __cplusplus
-
 #include <vector>
 
 #include <opencv2/core.hpp>
@@ -166,8 +164,6 @@ computeOrientation( const cv::Mat_<double> &x, const cv::Mat_<double> &xp,
                     Matx33d &R, Vec3d &t, double s );
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

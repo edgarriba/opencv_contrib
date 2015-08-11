@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_SIMPLE_PIPELINE_HPP__
 #define __OPENCV_SFM_SIMPLE_PIPELINE_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 #include "libmv/correspondence/feature.h"
@@ -136,8 +134,6 @@ void
 parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks );
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

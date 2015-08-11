@@ -36,8 +36,6 @@
 #ifndef __OPENCV_CONDITIONING_HPP__
 #define __OPENCV_CONDITIONING_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 namespace cv
@@ -92,8 +90,6 @@ normalizeIsotropicPoints( const Mat &X,
                           Mat &T );
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

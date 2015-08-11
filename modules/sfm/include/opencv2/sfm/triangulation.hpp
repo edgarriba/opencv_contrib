@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_TRIANGULATION_HPP__
 #define __OPENCV_SFM_TRIANGULATION_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 namespace cv
@@ -81,8 +79,6 @@ nViewTriangulate( const Mat_<double> &x,
 
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

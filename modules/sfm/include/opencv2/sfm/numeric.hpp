@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_NUMERIC_HPP__
 #define __OPENCV_SFM_NUMERIC_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 #include <Eigen/Core>
@@ -64,8 +62,6 @@ skewMatMinimal( const Vec3d &x );
 
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

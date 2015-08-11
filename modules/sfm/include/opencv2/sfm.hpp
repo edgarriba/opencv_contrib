@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_HPP__
 #define __OPENCV_SFM_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/sfm/conditioning.hpp>
 #include <opencv2/sfm/fundamental.hpp>
 #include <opencv2/sfm/numeric.hpp>
@@ -154,8 +152,6 @@ namespace cv
 //! @} sfm
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

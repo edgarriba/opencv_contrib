@@ -36,8 +36,6 @@
 #ifndef __OPENCV_PROJECTION_HPP__
 #define __OPENCV_PROJECTION_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 namespace cv
@@ -80,8 +78,6 @@ double
 depth(const Matx33d &R, const Vec3d &t, const Vec4d &X);
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 

@@ -36,8 +36,6 @@
 #ifndef __OPENCV_SFM_ROBUST_HPP__
 #define __OPENCV_SFM_ROBUST_HPP__
 
-#ifdef __cplusplus
-
 #include <opencv2/core.hpp>
 
 namespace cv
@@ -57,8 +55,6 @@ fundamentalFromCorrespondences8PointRobust( const Mat_<double> &x1,
                                             double outliers_probability = 1e-2 );
 
 } /* namespace cv */
-
-#endif /* __cplusplus */
 
 #endif
 
