@@ -381,4 +381,3 @@ namespace cv
 } // namespace cv
 
 #endif /* HAVE_CERES */
-

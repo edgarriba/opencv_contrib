@@ -49,4 +49,3 @@ Finally, the script reconstructs the given set of tracked points and show the re
 **random_scene_reconstruction.cpp**
 
 //TODO
-
