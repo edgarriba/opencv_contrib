@@ -2,6 +2,7 @@
 if (NOT HAVE_EIGEN)
   message(STATUS "Module opencv_sfm disabled because Eigen library is required.")
   ocv_module_disable(sfm)
+  return()
 endif()
 
 set(the_description "SFM algorithms")
