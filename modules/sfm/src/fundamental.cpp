@@ -33,16 +33,20 @@
  *
  */
 
-#include "opencv2/sfm/projection.hpp"
-#include "opencv2/sfm/triangulation.hpp"
-#include "opencv2/sfm/fundamental.hpp"
-#include "opencv2/sfm/numeric.hpp"
-#include "opencv2/sfm/conditioning.hpp"
+// Eigen
+#include <Eigen/Core>
 
+// OpenCV
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/sfm/projection.hpp>
+#include <opencv2/sfm/triangulation.hpp>
+#include <opencv2/sfm/fundamental.hpp>
+#include <opencv2/sfm/numeric.hpp>
+#include <opencv2/sfm/conditioning.hpp>
+
+// libmv headers
 #include "libmv/multiview/robust_fundamental.h"
 #include "libmv/multiview/fundamental.h"
-
-#include <opencv2/core/eigen.hpp>
 
 #include <iostream>
 using namespace std;

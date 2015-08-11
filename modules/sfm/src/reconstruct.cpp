@@ -38,10 +38,10 @@
 // Eigen
 #include <Eigen/Core>
 
-// Open CV
+// OpenCV
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/sfm.hpp>
 #include <opencv2/sfm/projection.hpp>
-#include <opencv2/core/eigen.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/highgui.hpp>

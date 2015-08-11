@@ -33,11 +33,15 @@
  *
  */
 
-#include "opencv2/sfm/triangulation.hpp"
-#include "opencv2/sfm/projection.hpp"
+// Eigen
+#include <Eigen/Core>
 
+// OpenCV
 #include <opencv2/core/eigen.hpp>
+#include <opencv2/sfm/triangulation.hpp>
+#include <opencv2/sfm/projection.hpp>
 
+// libmv headers
 #include "libmv/multiview/twoviewtriangulation.h"
 #include "libmv/multiview/fundamental.h"
 

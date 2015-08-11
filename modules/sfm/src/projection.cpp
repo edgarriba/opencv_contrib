@@ -33,11 +33,16 @@
  *
  */
 
-#include <opencv2/sfm/projection.hpp>
+// Eigen
+#include <Eigen/Core>
 
-#include "libmv/multiview/projection.h"
+// OpenCV
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/sfm/numeric.hpp>
+#include <opencv2/sfm/projection.hpp>
+
+// libmv headers
+#include "libmv/multiview/projection.h"
 
 namespace cv
 {
