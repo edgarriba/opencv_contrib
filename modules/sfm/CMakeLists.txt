@@ -1,3 +1,9 @@
+
+if (NOT HAVE_EIGEN)
+  message(STATUS "Module opencv_sfm disabled because Eigen library is required.")
+  ocv_module_disable(sfm)
+endif()
+
 set(the_description "SFM algorithms")
 
 ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
@@ -14,6 +20,7 @@ endif()
 set(LIBMV_LIGHT_INCLUDES
   src/libmv_light
   src/libmv_light/third_party/ssba
+  "${OpenCV_SOURCE_DIR}/include/opencv"
 )
 
 set(LIBMV_LIGHT_LIBS
@@ -27,11 +34,6 @@ set(LIBMV_LIGHT_LIBS
 
 
 ### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
-
-if (NOT HAVE_EIGEN)
-  ocv_module_disable(sfm)
-  message(STATUS "SfM module is disabled. Eigen library is required.")
-endif()
 
 find_package( Ceres QUIET )
 
@@ -57,8 +59,7 @@ set(OPENCV_SFM_DEPS
 ### CREATE OPENCV SFM MODULE ###
 
 ocv_add_module(sfm ${OPENCV_SFM_DEPS})
-ocv_include_directories( "${OpenCV_SOURCE_DIR}/include/opencv"
-                          ${LIBMV_LIGHT_INCLUDES} )
+ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 
 # build libmv_light
 add_subdirectory(src/libmv_light)
