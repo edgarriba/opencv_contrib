@@ -6,9 +6,6 @@ if(UNIX)
   if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
      set(CMAKE_CXX_FLAGS "${CMAKE_CSS_FLAGS} -fPIC")
   endif()
-else()
-  ocv_module_disable(sfm)
-  return()
 endif()
 
 
@@ -31,6 +28,11 @@ set(LIBMV_LIGHT_LIBS
 
 ### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
 
+if (NOT HAVE_EIGEN)
+  message(STATUS "SfM module is disabled. Eigen library is required.")
+  ocv_module_disable(sfm)
+endif()
+
 find_package( Ceres QUIET )
 
 if ( Ceres_FOUND )
@@ -42,7 +44,7 @@ else ()
 endif ()
 
 
-### CHECK OPENCV SFM MODULE DEPENDENCIES ###
+### DEFINE OPENCV SFM MODULE DEPENDENCIES ###
 
 set(OPENCV_SFM_DEPS
   opencv_core
@@ -51,15 +53,12 @@ set(OPENCV_SFM_DEPS
   opencv_xfeatures2d
 )
 
-ocv_check_dependencies(${OPENCV_SFM_DEPS})
-ocv_include_directories("${OpenCV_SOURCE_DIR}/include/opencv")
-ocv_include_modules_recurse(${OPENCV_SFM_DEPS})
-
 
 ### CREATE OPENCV SFM MODULE ###
 
 ocv_add_module(sfm ${OPENCV_SFM_DEPS})
-ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
+ocv_include_directories( "${OpenCV_SOURCE_DIR}/include/opencv"
+                          ${LIBMV_LIGHT_INCLUDES} )
 
 # build libmv_light
 add_subdirectory(src/libmv_light)
@@ -76,12 +75,12 @@ ocv_module_include_directories()
 ocv_create_module( ${LIBMV_LIGHT_LIBS} )
 
 
-### OPENCV SFM TESTS ###
+### CREATE OPENCV SFM TESTS ###
 
 ocv_add_accuracy_tests()
 
 
-### OPENCV SFM SAMPLES ###
+### CREATE OPENCV SFM SAMPLES ###
 
 if ( Ceres_FOUND )
   ocv_add_samples(opencv_viz)
