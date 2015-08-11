@@ -182,9 +182,8 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
                                T &libmv_reconstruction)
 {
   Ptr<Feature2D> edetector = ORB::create(10000);
-  //Ptr<Feature2D> edetector = AKAZE::create();
-  //Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
-  Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create(64, true, 4);
+  Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
+  //Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create(64, true, 4);
 
   cout << "Initialize nViewMatcher ... ";
   libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
