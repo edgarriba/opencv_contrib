@@ -2,8 +2,12 @@ set(the_description "SFM algorithms")
 
 ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
 
-# needed since we are linking static libs
-set(CMAKE_CXX_FLAGS ${CMAKE_CSS_FLAGS} "-fPIC")
+if(UNIX)
+  if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
+    # needed since we are linking static libs
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  endif()
+endif()
 
 
 ### LIBMV LIGHT DEFINITIONS ###
