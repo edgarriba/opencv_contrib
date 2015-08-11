@@ -29,13 +29,14 @@ set(LIBMV_LIGHT_LIBS
 
 ### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
 
-find_package( Ceres )
+find_package( Ceres QUIET )
 
 if ( Ceres_FOUND )
   add_definitions("-DCERES_FOUND=1")
   list(APPEND LIBMV_LIGHT_LIBS simple_pipeline)
 else ()
   add_definitions("-DCERES_FOUND=0")
+  message(STATUS "CERES support is disabled. Ceres Solver for reconstruction API is required.")
 endif ()
 
 
