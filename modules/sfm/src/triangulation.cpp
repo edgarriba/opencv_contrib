@@ -36,10 +36,10 @@
 #include "opencv2/sfm/triangulation.hpp"
 #include "opencv2/sfm/projection.hpp"
 
-#include "libmv/multiview/twoviewtriangulation.h"
-#include "libmv/multiview/fundamental.h"
 #include <opencv2/core/eigen.hpp>
 
+#include "libmv/multiview/twoviewtriangulation.h"
+#include "libmv/multiview/fundamental.h"
 
 using namespace cv;
 using namespace std;

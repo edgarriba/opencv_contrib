@@ -35,8 +35,9 @@
 
 #if CERES_FOUND
 
-#include <opencv2/sfm/simple_pipeline.hpp>
 #include <opencv2/xfeatures2d.hpp>
+
+#include "opencv2/sfm/simple_pipeline.hpp"
 
 #include "libmv/simple_pipeline/bundle.h"
 #include "libmv/simple_pipeline/initialize_reconstruction.h"

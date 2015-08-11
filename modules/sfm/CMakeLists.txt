@@ -29,8 +29,8 @@ set(LIBMV_LIGHT_LIBS
 ### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
 
 if (NOT HAVE_EIGEN)
-  message(STATUS "SfM module is disabled. Eigen library is required.")
   ocv_module_disable(sfm)
+  message(STATUS "SfM module is disabled. Eigen library is required.")
 endif()
 
 find_package( Ceres QUIET )

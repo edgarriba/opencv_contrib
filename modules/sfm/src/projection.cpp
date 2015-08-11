@@ -37,7 +37,6 @@
 
 #include "libmv/multiview/projection.h"
 #include <opencv2/core/eigen.hpp>
-#include <opencv2/sfm/eigen.hpp>
 #include <opencv2/sfm/numeric.hpp>
 
 namespace cv
