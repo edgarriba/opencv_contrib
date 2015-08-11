@@ -1,7 +1,7 @@
 Structure From Motion module
 ============================
 
-This module contains algorithms to perform 3d reconstruction from 2d images. The core of the module is a light version of [libmv](http://code.google.com/p/libmv/) which is a Structure from Motion (SfM) library divided into different modules (image/detector/descriptor/multiview) that allow to resolve part of the SfM process.
+This module contains algorithms to perform 3d reconstruction from 2d images. The core of the module is a light version of [libmv](https://github.com/libmv/libmv) which is a Structure from Motion (SfM) library divided into different modules (image/detector/descriptor/multiview) that allow to resolve part of the SfM process.
 
 The main reconstruction API currently uses the open-source [Ceres Solver](http://ceres-solver.org/) in order to solve part of the Bundle Adjustment plus the points Intersect. If Ceres Solver is not installed on your system, the reconstruction funcionality will be disabled.
 
@@ -24,7 +24,7 @@ There are provided some samples in order to show the reconstruction functionalit
 This program shows the two view reconstruction capabilities in the OpenCV Structure From Motion (SFM) module. It uses the following data from the VGG datasets at "reconv2 _pts.txt" where the first line has the number of points and each subsequent line has entries for matched points as: x1 y1 x2 y2. Finally, the script reconstructs the given set of correspondences and show the result using the OpenCV 3d visualizer (viz).
 
 <p align="center">
-  <img src="samples/data/recon2v.jpg" width="400" height="400">
+  <img src="doc/pics/recon2v.jpg" width="400" height="400">
 </p>
 
 **nView_scene_reconstruction.cpp**
@@ -38,8 +38,8 @@ To run this example you can type the following command in the opencv binaries di
 Finally, the script reconstructs the given set of tracked points and show the result using the OpenCV 3d visualizer (viz). On the left image the original scene from where we extracted the input file, on the right, the obtained result.
 
 <p align="center">
-  <img src="samples/data/nView1.jpg" width="400" height="400">
-  <img src="samples/data/nView2.jpg" width="400" height="400">
+  <img src="doc/pics/nView1.jpg" width="400" height="400">
+  <img src="doc/pics/nView2.jpg" width="400" height="400">
 </p>
 
 **unordered_scene_reconstruction.cpp**
