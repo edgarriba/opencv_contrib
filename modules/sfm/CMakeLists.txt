@@ -1,12 +1,14 @@
 set(the_description "SFM algorithms")
 
-
 ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
 
 if(UNIX)
   if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
      set(CMAKE_CXX_FLAGS "${CMAKE_CSS_FLAGS} -fPIC")
   endif()
+else()
+  ocv_module_disable(sfm)
+  return()
 endif()
 
 
