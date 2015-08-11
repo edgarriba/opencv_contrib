@@ -44,11 +44,9 @@ endif ()
 
 set(OPENCV_SFM_DEPS
   opencv_core
-  opencv_ts
   opencv_calib3d
   opencv_features2d
   opencv_xfeatures2d
-  opencv_viz
 )
 
 ocv_check_dependencies(${OPENCV_SFM_DEPS})
