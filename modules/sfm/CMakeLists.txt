@@ -63,6 +63,7 @@ ocv_add_module(sfm ${OPENCV_SFM_DEPS})
 ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 
 # build libmv_light
+ocv_module_include_directories()
 add_subdirectory(src/libmv_light)
 
 # source files
@@ -71,9 +72,9 @@ FILE(GLOB OPENCV_SFM_SRC src/*.cpp)
 # define the header files (make the headers appear in IDEs.)
 FILE(GLOB OPENCV_SFM_HDRS include/opencv2/sfm/*.hpp)
 
-ocv_set_module_sources( HEADERS ${OPENCV_SFM_HDRS} SOURCES ${OPENCV_SFM_SRC} )
+ocv_set_module_sources( HEADERS ${OPENCV_SFM_HDRS}
+                        SOURCES ${OPENCV_SFM_SRC} )
 
-ocv_module_include_directories()
 ocv_create_module( ${LIBMV_LIGHT_LIBS} )
 
 
