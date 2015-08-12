@@ -33,6 +33,8 @@
  *
  */
 
+#include "precomp.hpp"
+
 // Eigen
 #include <Eigen/Core>
 
@@ -75,7 +77,7 @@ triangulateDLT( const Vec2d &xl, const Vec2d &xr,
 
 // It is the standard DLT; for derivation see appendix of Keir's thesis.
 void
-nViewTriangulate(const Mat_<double> &x, const vector<Matx34d> &Ps, Vec3d &X)
+nViewTriangulate(const Mat_<double> &x, const std::vector<Matx34d> &Ps, Vec3d &X)
 {
     CV_Assert(x.rows == 2);
     unsigned nviews = x.cols;
@@ -107,14 +109,14 @@ triangulatePoints(InputArrayOfArrays _points2d, InputArrayOfArrays _projection_m
 
     // inputs
     size_t n_points;
-    vector<Mat_<double> > points2d(nviews);
-    vector<Matx34d> projection_matrices(nviews);
+    std::vector<Mat_<double> > points2d(nviews);
+    std::vector<Matx34d> projection_matrices(nviews);
     {
-        vector<Mat> points2d_tmp;
+        std::vector<Mat> points2d_tmp;
         _points2d.getMatVector(points2d_tmp);
         n_points = points2d_tmp[0].cols;
 
-        vector<Mat> projection_matrices_tmp;
+        std::vector<Mat> projection_matrices_tmp;
         _projection_matrices.getMatVector(projection_matrices_tmp);
 
         // Make sure the dimensions are right

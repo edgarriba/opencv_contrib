@@ -36,6 +36,8 @@
 #ifndef __OPENCV_SFM_HPP__
 #define __OPENCV_SFM_HPP__
 
+#include <vector>
+
 #include <opencv2/sfm/conditioning.hpp>
 #include <opencv2/sfm/fundamental.hpp>
 #include <opencv2/sfm/numeric.hpp>

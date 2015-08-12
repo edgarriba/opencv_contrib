@@ -33,6 +33,8 @@
  *
  */
 
+#include "precomp.hpp"
+
 // Eigen
 #include <Eigen/Core>
 
@@ -120,12 +122,12 @@ namespace cv
 
 // MotionFromEssential
     void
-    motionFromEssential( const Matx33d &_E, vector<Matx33d> &_Rs,
-                         vector<Vec3d> &_ts )
+    motionFromEssential( const Matx33d &_E, std::vector<Matx33d> &_Rs,
+                         std::vector<Vec3d> &_ts )
     {
         libmv::Mat3 E;
-        vector < libmv::Mat3 > Rs;
-        vector < libmv::Vec3 > ts;
+        std::vector < libmv::Mat3 > Rs;
+        std::vector < libmv::Vec3 > ts;
 
         cv2eigen(_E, E);
 
@@ -150,8 +152,8 @@ namespace cv
     }
 
 
-    int motionFromEssentialChooseSolution( const vector<Matx33d> &Rs,
-                                           const vector<Vec3d> &ts,
+    int motionFromEssentialChooseSolution( const std::vector<Matx33d> &Rs,
+                                           const std::vector<cv::Vec3d> &ts,
                                            const Matx33d &K1,
                                            const Vec2d &x1,
                                            const Matx33d &K2,
