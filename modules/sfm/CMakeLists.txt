@@ -1,27 +1,33 @@
-find_package(Eigen QUIET)
-find_package(glog QUIET)
-find_package(gflags QUIET)
+set(the_description "SFM algorithms")
 
-## CANNOT DETECT GLOG AND GFLAGS!
-#if(NOT HAVE_EIGEN OR NOT GLOG_FOUND OR NOT GFLAGS_FOUND)
-if(NOT HAVE_EIGEN)
-  set(DISABLE_MSG "Module opencv_sfm disabled because the following dependencies are not found: ")
+
+### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
+
+find_package(Ceres QUIET)
+
+if(NOT DEFINED SFM_DEPS_OK)
+  set(_fname "${CMAKE_CURRENT_BINARY_DIR}/test_sfm_deps.cpp")
+  file(WRITE "${_fname}" "#include <glog/logging.h>\n#include <gflags/gflags.h>\nint main() { (void)(0); return 0; }\n")
+  try_compile(SFM_DEPS_OK "${CMAKE_CURRENT_BINARY_DIR}" "${_fname}"
+      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${GLOG_INCLUDE_DIRS};${GFLAGS_INCLUDE_DIRS}"
+      LINK_LIBRARIES ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES}
+      OUTPUT_VARIABLE OUTPUT
+  )
+  file(REMOVE "${_fname}")
+  message(STATUS "Checking SFM deps... ${SFM_DEPS_OK}")
+endif()
+
+if(NOT HAVE_EIGEN OR NOT SFM_DEPS_OK)
+  set(DISABLE_MSG "Module opencv_sfm disabled because the following dependencies are not found:")
   if(NOT HAVE_EIGEN)
-    set(DISABLE_MSG "${DISABLE_MSG}Eigen ")
+    set(DISABLE_MSG "${DISABLE_MSG} Eigen")
   endif()
-  if(NOT GLOG_FOUND)
-    set(DISABLE_MSG "${DISABLE_MSG}Glog ")
-  endif()
-  if(NOT GFLAGS_FOUND)
-    set(DISABLE_MSG "${DISABLE_MSG}Gflags ")
+  if(NOT SFM_DEPS_OK)
+    set(DISABLE_MSG "${DISABLE_MSG} Glog/Gflags")
   endif()
   message(STATUS ${DISABLE_MSG})
   ocv_module_disable(sfm)
-  return()
 endif()
-
-
-set(the_description "SFM algorithms")
 
 
 ### LIBMV LIGHT DEFINITIONS ###
@@ -30,6 +36,8 @@ set(LIBMV_LIGHT_INCLUDES
   src/libmv_light
   src/libmv_light/third_party/ssba
   "${OpenCV_SOURCE_DIR}/include/opencv"
+  "${GLOG_INCLUDE_DIRS}"
+  "${GFLAGS_INCLUDE_DIRS}"
 )
 
 set(LIBMV_LIGHT_LIBS
@@ -39,37 +47,39 @@ set(LIBMV_LIGHT_LIBS
   multiview
   multiview_test_data
   numeric
+  ${GLOG_LIBRARIES}
+  ${GFLAGS_LIBRARIES}
 )
 
-
-### LIBMV LIGHT EXTERNAL DEPENDENCIES ###
-
-find_package( Ceres QUIET )
-
-if ( Ceres_FOUND )
+if(Ceres_FOUND)
   add_definitions("-DCERES_FOUND=1")
   list(APPEND LIBMV_LIGHT_LIBS simple_pipeline)
-else ()
+else()
   add_definitions("-DCERES_FOUND=0")
   message(STATUS "CERES support is disabled. Ceres Solver for reconstruction API is required.")
-endif ()
-
+endif()
 
 ### DEFINE OPENCV SFM MODULE DEPENDENCIES ###
 
-set(OPENCV_SFM_DEPS
-  opencv_core
-  opencv_calib3d
-  opencv_features2d
-  opencv_xfeatures2d
+### CREATE OPENCV SFM MODULE ###
+
+ocv_add_module(sfm
+    opencv_core
+    opencv_calib3d
+    opencv_features2d
+    opencv_xfeatures2d
 )
 
 
-### CREATE OPENCV SFM MODULE ###
-
-ocv_add_module(sfm ${OPENCV_SFM_DEPS})
-
-ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch -Wshadow -Wsign-compare -Wmissing-declarations -Wunused-but-set-variable -Wunused-parameter -Wunused-function)
+ocv_warnings_disable(CMAKE_CXX_FLAGS
+    -Wundef
+    -Wshadow
+    -Wsign-compare
+    -Wmissing-declarations
+    -Wunused-but-set-variable
+    -Wunused-parameter
+    -Wunused-function
+)
 
 if(UNIX)
   if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
@@ -86,8 +96,8 @@ FILE(GLOB OPENCV_SFM_SRC src/*.cpp)
 # define the header files (make the headers appear in IDEs.)
 FILE(GLOB OPENCV_SFM_HDRS include/opencv2/sfm/*.hpp)
 
-ocv_set_module_sources( HEADERS ${OPENCV_SFM_HDRS}
-                        SOURCES ${OPENCV_SFM_SRC} )
+ocv_set_module_sources(HEADERS ${OPENCV_SFM_HDRS}
+                       SOURCES ${OPENCV_SFM_SRC})
 
 ocv_create_module()
 
@@ -111,6 +121,6 @@ ocv_add_accuracy_tests()
 
 ### CREATE OPENCV SFM SAMPLES ###
 
-if ( Ceres_FOUND )
+if(Ceres_FOUND)
   ocv_add_samples(opencv_viz)
 endif ()

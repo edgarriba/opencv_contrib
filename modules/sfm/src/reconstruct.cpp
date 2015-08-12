@@ -33,6 +33,8 @@
  *
  */
 
+#include "precomp.hpp"
+
 #if CERES_FOUND
 
 // Eigen

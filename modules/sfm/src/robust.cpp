@@ -33,6 +33,8 @@
  *
  */
 
+#include "precomp.hpp"
+
 // Eigen
 #include <Eigen/Core>
 
@@ -54,7 +56,7 @@ fundamentalFromCorrespondences8PointRobust( const Mat_<double> &_x1,
                                             const Mat_<double> &_x2,
                                             double max_error,
                                             Matx33d &_F,
-                                            vector<int> &_inliers,
+                                            std::vector<int> &_inliers,
                                             double outliers_probability )
 {
     libmv::Mat x1, x2;

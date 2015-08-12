@@ -33,6 +33,8 @@
  *
  */
 
+#include "precomp.hpp"
+
 // Eigen
 #include <Eigen/Core>
 
