@@ -20,17 +20,8 @@ if(NOT HAVE_EIGEN)
   return()
 endif()
 
+
 set(the_description "SFM algorithms")
-
-ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch -Wshadow -Wsign-compare -Wmissing-declarations -Wunused-but-set-variable -Wunused-parameter -Wunused-function)
-
-if(UNIX)
-  if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
-      # CANNOT COMPILE WITH CXX
-      #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CSS_FLAGS} -fPIC")
-  endif()
-endif()
 
 
 ### LIBMV LIGHT DEFINITIONS ###
@@ -77,6 +68,14 @@ set(OPENCV_SFM_DEPS
 ### CREATE OPENCV SFM MODULE ###
 
 ocv_add_module(sfm ${OPENCV_SFM_DEPS})
+
+ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch -Wshadow -Wsign-compare -Wmissing-declarations -Wunused-but-set-variable -Wunused-parameter -Wunused-function)
+
+if(UNIX)
+  if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  endif()
+endif()
 
 ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 ocv_module_include_directories()
