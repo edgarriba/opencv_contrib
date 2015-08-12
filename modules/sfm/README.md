@@ -3,11 +3,19 @@ Structure From Motion module
 
 This module contains algorithms to perform 3d reconstruction from 2d images. The core of the module is a light version of [libmv](https://github.com/libmv/libmv) which is a Structure from Motion (SfM) library divided into different modules (image/detector/descriptor/multiview) that allow to resolve part of the SfM process.
 
-The main reconstruction API currently uses the open-source [Ceres Solver](http://ceres-solver.org/) in order to solve part of the Bundle Adjustment plus the points Intersect. If Ceres Solver is not installed on your system, the reconstruction funcionality will be disabled.
+
+Installation (Linux)
+--------------------
+
+In order to install the SfM module into your system, you must add the following third party libraries: Eigen, Glog and Gflag. If you are on Linux you can simply type the following command:
+
+    sudo apt-get install libeigen3-dev libgflags-dev libgoogle-glog-dev
 
 
 Ceres installation (Linux)
 --------------------------
+
+The main reconstruction API currently uses the open-source [Ceres Solver](http://ceres-solver.org/) in order to solve part of the Bundle Adjustment plus the points Intersect. If Ceres Solver is not installed on your system, the reconstruction funcionality will be disabled.
 
 Here are the instructions on how to install the Ceres Solver on your machine (Linux).
 

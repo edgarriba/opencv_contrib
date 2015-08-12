@@ -1,17 +1,34 @@
+find_package(Eigen QUIET)
+find_package(glog QUIET)
+find_package(gflags QUIET)
 
-if (NOT HAVE_EIGEN)
-  message(STATUS "Module opencv_sfm disabled because Eigen library is required.")
+## CANNOT DETECT GLOG AND GFLAGS!
+#if(NOT HAVE_EIGEN OR NOT GLOG_FOUND OR NOT GFLAGS_FOUND)
+if(NOT HAVE_EIGEN)
+  set(DISABLE_MSG "Module opencv_sfm disabled because the following dependencies are not found: ")
+  if(NOT HAVE_EIGEN)
+    set(DISABLE_MSG "${DISABLE_MSG}Eigen ")
+  endif()
+  if(NOT GLOG_FOUND)
+    set(DISABLE_MSG "${DISABLE_MSG}Glog ")
+  endif()
+  if(NOT GFLAGS_FOUND)
+    set(DISABLE_MSG "${DISABLE_MSG}Gflags ")
+  endif()
+  message(STATUS ${DISABLE_MSG})
   ocv_module_disable(sfm)
   return()
 endif()
 
 set(the_description "SFM algorithms")
 
-ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch)
+ocv_warnings_disable(CMAKE_CXX_FLAGS -Wundef -Winvalid-pch -Wshadow -Wsign-compare -Wmissing-declarations -Wunused-but-set-variable -Wunused-parameter -Wunused-function)
 
 if(UNIX)
   if(CMAKE_COMPILER_IS_GNUCXX OR CV_ICC)
-     set(CMAKE_CXX_FLAGS "${CMAKE_CSS_FLAGS} -fPIC")
+      # CANNOT COMPILE WITH CXX
+      #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CSS_FLAGS} -fPIC")
   endif()
 endif()
 
@@ -60,11 +77,9 @@ set(OPENCV_SFM_DEPS
 ### CREATE OPENCV SFM MODULE ###
 
 ocv_add_module(sfm ${OPENCV_SFM_DEPS})
-ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 
-# build libmv_light
+ocv_include_directories( ${LIBMV_LIGHT_INCLUDES} )
 ocv_module_include_directories()
-add_subdirectory(src/libmv_light)
 
 # source files
 FILE(GLOB OPENCV_SFM_SRC src/*.cpp)
@@ -75,7 +90,19 @@ FILE(GLOB OPENCV_SFM_HDRS include/opencv2/sfm/*.hpp)
 ocv_set_module_sources( HEADERS ${OPENCV_SFM_HDRS}
                         SOURCES ${OPENCV_SFM_SRC} )
 
-ocv_create_module( ${LIBMV_LIGHT_LIBS} )
+ocv_create_module()
+
+# build libmv_light
+if(NOT CMAKE_VERSION VERSION_LESS 2.8.11) # See ocv_target_include_directories() implementation
+  if(TARGET ${the_module})
+    get_target_property(__include_dirs ${the_module} INCLUDE_DIRECTORIES)
+    include_directories(${__include_dirs})
+  endif()
+endif()
+include_directories(${OCV_TARGET_INCLUDE_DIRS_${the_module}})
+add_subdirectory(src/libmv_light)
+
+ocv_target_link_libraries(${the_module} ${LIBMV_LIGHT_LIBS})
 
 
 ### CREATE OPENCV SFM TESTS ###
