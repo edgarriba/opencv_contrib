@@ -136,8 +136,9 @@ namespace cvtest
    * Each row corresponds to a different point.
    *
    */
-  void
-  parser_2D_tracks(const std::string &filename, libmv::Tracks &tracks);
+  //void
+  //parser_2D_tracks(const std::string &filename, libmv::Tracks &tracks);
+  //parser_2D_tracks(const std::string &_filename, std::vector < Mat_<double> > &points2d );
 
 #endif
 

@@ -41,6 +41,7 @@
 //#include "third_party/ssba/Math/v3d_optimization.h"// less logging messages
 
 using namespace cv;
+using namespace cv::sfm;
 using namespace cvtest;
 using namespace std;
 
@@ -51,12 +52,15 @@ TEST(Sfm_simple_pipeline, backyard)
 {
     //V3D::optimizerVerbosenessLevel = 0; // less logging messages
 
+    Ptr<SFMLibmvEuclideanReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+
     string trackFilename =
       string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
 
     // Get tracks from file: check backyard.blend file
-    libmv::Tracks tracks;
-    parser_2D_tracks( trackFilename, tracks );
+    std::vector < Mat_<double> > points2d;
+    //parser_2D_tracks( trackFilename, points2d );
+
 
     // Initial reconstruction
     int keyframe1 = 1, keyframe2 = 30;
@@ -65,17 +69,14 @@ TEST(Sfm_simple_pipeline, backyard)
     double focal_length = 860.986572265625;  // f = 24mm (checked debugging blender)
     double principal_x = 400, principal_y = 225, k1 = -0.158, k2 = 0.131, k3 = 0;
 
+    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */                         libmv_reconstruction, refine_intrinsics );
 
-    libmv_EuclideanReconstruction libmv_reconstruction;
-    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+    euclidean_reconstruction->run(points2d, keyframe1, keyframe2, focal_length,
+                                  principal_x, principal_y, k1, k2, k3, refine_intrinsics);
 
-    libmv_solveReconstruction( tracks, keyframe1, keyframe2,
-                               focal_length, principal_x, principal_y, k1, k2, k3,
-                               libmv_reconstruction, refine_intrinsics );
+    //cout << "libmv_reconstruction.error = " << euclidean_reconstruction->libmv_reconstruction_.error << endl;
 
-    cout << "libmv_reconstruction.error = " << libmv_reconstruction.error << endl;
-
-    EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
+    //EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
 }
 
 #endif /* CERES_FOUND */

@@ -170,57 +170,57 @@ namespace cv
       Ka = K.getMat();
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
 
-      // Get tracks from 2d points
-      libmv::Tracks tracks;
-
-      if (is_sequence)
-      {
-        // Pairwise tracking
-        parser_2D_tracks( pts2d, tracks );
-      }
-      else
-      { /*TODO: think in something*/ }
-
-      // Initial reconstruction
-      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
-
-      // Camera data
-      const double focal_length = Ka(0,0);
-      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
-
-      // Refinement parameters
-      libmv_EuclideanReconstruction libmv_reconstruction;
-      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
-
-      // Perform reconstruction
-      libmv_solveReconstruction( tracks, keyframe1, keyframe2,
-                                 focal_length, principal_x, principal_y, k1, k2, k3,
-                                 libmv_reconstruction, refine_intrinsics );
-
-      // Extract estimated camera poses
-      for(unsigned int i = 0; i < nviews; ++i)
-      {
-        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
-        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
-        Mat(R).copyTo(Rs.getMatRef(i));
-        Mat(t).copyTo(Ts.getMatRef(i));
-      }
-
-      // Extract reconstructed points
-      size_t n_points =
-        (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-
-      points3d.create(3, n_points, CV_64F);
-      Mat points3d_ = points3d.getMat();
-
-      for ( unsigned i = 0; i < n_points; ++i )
-        for ( int j = 0; j < 3; ++j )
-          points3d_.at<double>(j, i) =
-            libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
-
-      // Extract refined intrinsic parameters
-      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-      Mat(Ka).copyTo(K.getMat());
+//      // Get tracks from 2d points
+//      //libmv::Tracks tracks;
+//
+//      if (is_sequence)
+//      {
+//        // Pairwise tracking
+//        //parser_2D_tracks( pts2d, tracks );
+//      }
+//      else
+//      { /*TODO: think in something*/ }
+//
+//      // Initial reconstruction
+//      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
+//
+//      // Camera data
+//      const double focal_length = Ka(0,0);
+//      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+//
+//      // Refinement parameters
+//      libmv_EuclideanReconstruction libmv_reconstruction;
+//      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
+//
+//      // Perform reconstruction
+//      libmv_solveReconstruction( tracks, keyframe1, keyframe2,
+//                                 focal_length, principal_x, principal_y, k1, k2, k3,
+//                                 libmv_reconstruction, refine_intrinsics );
+//
+//      // Extract estimated camera poses
+//      for(unsigned int i = 0; i < nviews; ++i)
+//      {
+//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
+//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
+//        Mat(R).copyTo(Rs.getMatRef(i));
+//        Mat(t).copyTo(Ts.getMatRef(i));
+//      }
+//
+//      // Extract reconstructed points
+//      size_t n_points =
+//        (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
+//
+//      points3d.create(3, n_points, CV_64F);
+//      Mat points3d_ = points3d.getMat();
+//
+//      for ( unsigned i = 0; i < n_points; ++i )
+//        for ( int j = 0; j < 3; ++j )
+//          points3d_.at<double>(j, i) =
+//            libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
+//
+//      // Extract refined intrinsic parameters
+//      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+//      Mat(Ka).copyTo(K.getMat());
     }
 
   }
@@ -233,32 +233,32 @@ namespace cv
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
     CV_Assert( images.size() >= (unsigned)2 );
 
-    libmv_ProjectiveReconstruction libmv_reconstruction;
-    libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(images, Ka, libmv_reconstruction);
-
-    const int depth = K.getMat().depth();
-    const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
-    projection_matrices.create(nviews, 1, depth);
-
-    // Extract estimated projection matrices
-    Matx34d P;
-    for(unsigned int i = 0; i < nviews; ++i)
-    {
-      eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].P, P);
-      Mat(P).copyTo(projection_matrices.getMatRef(i));
-    }
-
-    // Extract reconstructed points
-    size_t n_points =
-      (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-
-    points3d.create(3, n_points, depth);
-    Mat points3d_ = points3d.getMat();
-
-    for ( unsigned i = 0; i < n_points; ++i )
-      for ( int j = 0; j < 3; ++j )
-        points3d_.at<double>(j, i) =
-          libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
+//    libmv_ProjectiveReconstruction libmv_reconstruction;
+//    libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(images, Ka, libmv_reconstruction);
+//
+//    const int depth = K.getMat().depth();
+//    const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
+//    projection_matrices.create(nviews, 1, depth);
+//
+//    // Extract estimated projection matrices
+//    Matx34d P;
+//    for(unsigned int i = 0; i < nviews; ++i)
+//    {
+//      eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].P, P);
+//      Mat(P).copyTo(projection_matrices.getMatRef(i));
+//    }
+//
+//    // Extract reconstructed points
+//    size_t n_points =
+//      (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
+//
+//    points3d.create(3, n_points, depth);
+//    Mat points3d_ = points3d.getMat();
+//
+//    for ( unsigned i = 0; i < n_points; ++i )
+//      for ( int j = 0; j < 3; ++j )
+//        points3d_.at<double>(j, i) =
+//          libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
   }
 
 
@@ -292,37 +292,37 @@ namespace cv
     }
     else
     {
-      libmv_EuclideanReconstruction libmv_reconstruction;
-      libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(images, Ka, libmv_reconstruction);
-
-      const int depth = K.getMat().depth();
-      const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
-      Rs.create(nviews, 1, depth);
-      Ts.create(nviews, 1, depth);
-
-      // Extract estimated camera poses
-      Matx33d R; Vec3d t;
-      for(unsigned int i = 0; i < nviews; ++i)
-      {
-        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
-        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
-        Mat(R).copyTo(Rs.getMatRef(i));
-        Mat(t).copyTo(Ts.getMatRef(i));
-      }
-
-      // Extract reconstructed points
-      size_t n_points = (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-
-      points3d.create(3, n_points, depth);
-      Mat points3d_ = points3d.getMat();
-
-      for ( unsigned i = 0; i < n_points; ++i )
-        for ( int j = 0; j < 3; ++j )
-          points3d_.at<double>(j, i) = libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
-
-      // Extract refined intrinsic parameters
-      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-      Mat(Ka).copyTo(K.getMat());
+//      libmv_EuclideanReconstruction libmv_reconstruction;
+//      libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(images, Ka, libmv_reconstruction);
+//
+//      const int depth = K.getMat().depth();
+//      const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
+//      Rs.create(nviews, 1, depth);
+//      Ts.create(nviews, 1, depth);
+//
+//      // Extract estimated camera poses
+//      Matx33d R; Vec3d t;
+//      for(unsigned int i = 0; i < nviews; ++i)
+//      {
+//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
+//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
+//        Mat(R).copyTo(Rs.getMatRef(i));
+//        Mat(t).copyTo(Ts.getMatRef(i));
+//      }
+//
+//      // Extract reconstructed points
+//      size_t n_points = (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
+//
+//      points3d.create(3, n_points, depth);
+//      Mat points3d_ = points3d.getMat();
+//
+//      for ( unsigned i = 0; i < n_points; ++i )
+//        for ( int j = 0; j < 3; ++j )
+//          points3d_.at<double>(j, i) = libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
+//
+//      // Extract refined intrinsic parameters
+//      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+//      Mat(Ka).copyTo(K.getMat());
     }
 
   }
@@ -344,39 +344,39 @@ namespace cv
                           0, 0, width,
                           0, 0,      1);
 
-    libmv_UncalibratedReconstruction libmv_reconstruction;
-    libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(images, Ka, libmv_reconstruction);
-
-    const int depth = K.getMat().depth();
-    const unsigned nviews = libmv_reconstruction.euclidean_reconstruction.AllCameras().size();
-    Rs.create(nviews, 1, depth);
-    Ts.create(nviews, 1, depth);
-
-    // Extract estimated camera poses
-    Matx33d R; Vec3d t;
-    for(unsigned int i = 0; i < nviews; ++i)
-    {
-      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].R, R);
-      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].t, t);
-      Mat(R).copyTo(Rs.getMatRef(i));
-      Mat(t).copyTo(Ts.getMatRef(i));
-    }
-
-    // Extract reconstructed points
-    size_t n_points =
-      (unsigned) libmv_reconstruction.euclidean_reconstruction.AllPoints().size();
-
-    points3d.create(3, n_points, depth);
-    Mat points3d_ = points3d.getMat();
-
-    for ( unsigned i = 0; i < n_points; ++i )
-      for ( int j = 0; j < 3; ++j )
-        points3d_.at<double>(j, i) =
-          libmv_reconstruction.euclidean_reconstruction.AllPoints()[i].X[j];
-
-    // Extract refined intrinsic parameters
-    eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-    Mat(Ka).copyTo(K.getMat());
+//    libmv_UncalibratedReconstruction libmv_reconstruction;
+//    libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(images, Ka, libmv_reconstruction);
+//
+//    const int depth = K.getMat().depth();
+//    const unsigned nviews = libmv_reconstruction.euclidean_reconstruction.AllCameras().size();
+//    Rs.create(nviews, 1, depth);
+//    Ts.create(nviews, 1, depth);
+//
+//    // Extract estimated camera poses
+//    Matx33d R; Vec3d t;
+//    for(unsigned int i = 0; i < nviews; ++i)
+//    {
+//      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].R, R);
+//      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].t, t);
+//      Mat(R).copyTo(Rs.getMatRef(i));
+//      Mat(t).copyTo(Ts.getMatRef(i));
+//    }
+//
+//    // Extract reconstructed points
+//    size_t n_points =
+//      (unsigned) libmv_reconstruction.euclidean_reconstruction.AllPoints().size();
+//
+//    points3d.create(3, n_points, depth);
+//    Mat points3d_ = points3d.getMat();
+//
+//    for ( unsigned i = 0; i < n_points; ++i )
+//      for ( int j = 0; j < 3; ++j )
+//        points3d_.at<double>(j, i) =
+//          libmv_reconstruction.euclidean_reconstruction.AllPoints()[i].X[j];
+//
+//    // Extract refined intrinsic parameters
+//    eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
+//    Mat(Ka).copyTo(K.getMat());
 
   }
 
