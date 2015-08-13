@@ -38,14 +38,6 @@
 
 #include <opencv2/core.hpp>
 
-//#include "libmv/correspondence/feature.h"
-//#include "libmv/correspondence/feature_matching.h"
-//#include "libmv/correspondence/matches.h"
-//#include "libmv/correspondence/nRobustViewMatching.h"
-//#include "libmv/simple_pipeline/pipeline.h"
-//#include "libmv/simple_pipeline/camera_intrinsics.h"
-//#include "libmv/simple_pipeline/bundle.h"
-
 namespace cv
 {
 namespace sfm
@@ -69,6 +61,8 @@ public:
 
   virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
+
+  virtual double getError() = 0;
 };
 
 
@@ -80,6 +74,8 @@ public:
 
   virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
+
+  virtual double getError() = 0;
 
   /** @brief Creates an instance of the SFMLibmvEuclideanReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvEuclideanReconstruction> create();
@@ -95,6 +91,8 @@ public:
   virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
 
+  virtual double getError() = 0;
+
   /** @brief Creates an instance of the SFMLibmvProjectiveReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvProjectiveReconstruction> create();
 };
@@ -109,87 +107,11 @@ public:
   virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
 
+  virtual double getError() = 0;
+
   /** @brief Creates an instance of the SFMLibmvUncalibratedReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvUncalibratedReconstruction> create();
 };
-
-
-//typedef struct libmv_ReconstructionBase
-//{
-//  /* used for per-track average error calculation after reconstruction */
-//  libmv::Tracks tracks;
-//  libmv::CameraIntrinsics intrinsics;
-//
-//  double error;
-//
-//} libmv_Reconstruction;
-//
-//
-//typedef struct libmv_EuclideanReconstruction : public libmv_ReconstructionBase
-//{
-//  libmv::EuclideanReconstruction reconstruction;
-//
-//} libmv_EuclideanReconstruction;
-//
-//
-//typedef struct libmv_ProjectiveReconstruction : public libmv_ReconstructionBase
-//{
-//  libmv::ProjectiveReconstruction reconstruction;
-//
-//} libmv_ProjectiveReconstruction;
-//
-//
-//typedef struct libmv_UncalibratedReconstruction : public libmv_ReconstructionBase
-//{
-//  libmv::EuclideanReconstruction euclidean_reconstruction;
-//  libmv::ProjectiveReconstruction projective_reconstruction;
-//
-//} libmv_UncalibratedReconstruction;
-//
-//
-//// Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
-//CV_EXPORTS
-//void
-//libmv_solveReconstruction( const libmv::Tracks &tracks,
-//                           int keyframe1, int keyframe2,
-//                           double focal_length,
-//                           double principal_x, double principal_y,
-//                           double k1, double k2, double k3,
-//                           libmv_EuclideanReconstruction &libmv_reconstruction,
-//                           int refine_intrinsics = 0 );
-//
-//// Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
-//CV_EXPORTS
-//void
-//libmv_solveReconstruction( const libmv::Tracks &tracks,
-//                           int keyframe1, int keyframe2,
-//                           double focal_length,
-//                           double principal_x, double principal_y,
-//                           double k1, double k2, double k3,
-//                           libmv_ProjectiveReconstruction &libmv_reconstruction,
-//                           int refine_intrinsics = 0 );
-//
-//CV_EXPORTS
-//void
-//libmv_solveReconstruction( const libmv::Tracks &tracks,
-//                           int keyframe1, int keyframe2,
-//                           double focal_length,
-//                           double principal_x, double principal_y,
-//                           double k1, double k2, double k3,
-//                           libmv_UncalibratedReconstruction &libmv_reconstruction,
-//                           int refine_intrinsics = 0 );
-
-//template <class T>
-//void
-//libmv_solveReconstructionImpl( const std::vector<std::string> &images,
-//                               const cv::Matx33d &K,
-//                               T &libmv_reconstruction);
-
-//void
-//parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks );
-//
-//void
-//parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks );
 
 } /* namespace cv */
 } /* namespace sfm */

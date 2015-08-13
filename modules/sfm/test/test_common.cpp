@@ -79,47 +79,52 @@ expectFundamentalProperties( const cv::Matx33d &F,
 }
 
 
-#if CERES_FOUND
+void
+parser_2D_tracks(const string &_filename, std::vector < Mat_<double> > &points2d )
+{
+  ifstream myfile(_filename.c_str());
 
-//void
-//parser_2D_tracks( const string &_filename, libmv::Tracks &tracks )
-//{
-//    ifstream file( _filename.c_str() );
-//
-//    double x, y;
-//    string str;
-//
-//    for (int track = 0; getline(file, str); ++track)
-//    {
-//        istringstream line(str);
-//        bool is_first_time = true;
-//
-//        for (int frame = 0; line >> x >> y; ++frame)
-//        {
-//            // valid marker
-//            if ( x > 0 && y > 0 )
-//            {
-//                tracks.Insert( frame, track, x, y );
-//
-//                if ( is_first_time )
-//                    is_first_time = false;
-//            }
-//
-//            // lost track
-//            else if ( x < 0 && y < 0 )
-//            {
-//                is_first_time = true;
-//            }
-//
-//            // some error
-//            else
-//            {
-//                exit(1);
-//            }
-//        }
-//    }
-//}
+  if (!myfile.is_open())
+  {
+    cout << "Unable to read file: " << _filename << endl;
+    exit(0);
 
-#endif
+  } else {
+
+    double x, y;
+    string line_str;
+    int n_frames = 0, n_tracks = 0, track = 0;
+
+    while ( getline(myfile, line_str) )
+    {
+      istringstream line(line_str);
+
+      if ( track > n_tracks )
+      {
+        n_tracks = track;
+
+        for (int i = 0; i < n_frames; ++i)
+          cv::hconcat(points2d[i], Mat_<double>(2,1,-1), points2d[i]);
+      }
+
+      for (int frame = 1; line >> x >> y; ++frame)
+      {
+        if ( frame > n_frames )
+        {
+          n_frames = frame;
+          points2d.push_back(Mat_<double>(2,1,-1));
+        }
+
+        points2d[frame-1](0,track) = x;
+        points2d[frame-1](1,track) = y;
+      }
+
+      ++track;
+    }
+
+    myfile.close();
+  }
+
+}
 
 } // namespace cvtest

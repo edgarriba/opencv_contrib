@@ -93,9 +93,9 @@ int main(int argc, char* argv[])
 
 
   /// Compute the orientation and the scale between pointclouds
-  Matx33d R_rel;
-  Vec3d t_rel;
-  double s_rel;
+  //Matx33d R_rel;
+  //Vec3d t_rel;
+  //double s_rel;
   //computeOrientation(points3d, points3d_estimated, R_rel, t_rel, s_rel);
 
 

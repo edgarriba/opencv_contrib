@@ -117,8 +117,6 @@ namespace cvtest
                                const cv::Mat_<double> &ptsB,
                                double precision = 1e-9 );
 
-#if CERES_FOUND
-
   /**
    * 2D tracked points
    * -----------------
@@ -136,11 +134,8 @@ namespace cvtest
    * Each row corresponds to a different point.
    *
    */
-  //void
-  //parser_2D_tracks(const std::string &filename, libmv::Tracks &tracks);
-  //parser_2D_tracks(const std::string &_filename, std::vector < Mat_<double> > &points2d );
-
-#endif
+  void
+  parser_2D_tracks(const std::string &_filename, std::vector < cv::Mat_<double> > &points2d );
 
 } // namespace cvtest
 

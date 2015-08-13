@@ -55,6 +55,7 @@
 #include "libmv/reconstruction/projective_reconstruction.h"
 
 using namespace cv;
+using namespace cv::sfm;
 using namespace libmv;
 using namespace std;
 
@@ -169,6 +170,25 @@ namespace cv
     {
       Ka = K.getMat();
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
+
+      Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+
+      //Initial reconstruction
+      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
+
+      // Camera data
+      const double focal_length = Ka(0,0);
+      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+
+      // Refinement parameters
+      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
+
+      // TODO: convert pts2d to vector<Mat_<double> >
+      //euclidean_reconstruction->run(pts2d, keyframe1, keyframe2, focal_length,
+      //                              principal_x, principal_y, k1, k2, k3, refine_intrinsics);
+
+      // TODO: extract cameras and points
+
 
 //      // Get tracks from 2d points
 //      //libmv::Tracks tracks;
@@ -292,6 +312,7 @@ namespace cv
     }
     else
     {
+
 //      libmv_EuclideanReconstruction libmv_reconstruction;
 //      libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(images, Ka, libmv_reconstruction);
 //

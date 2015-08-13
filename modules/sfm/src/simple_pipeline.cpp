@@ -216,6 +216,70 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 }
 
 
+void
+parser_2D_tracks( const std::vector<Mat_<double> > &points2d, libmv::Tracks &tracks )
+{
+  const int nframes = static_cast<int>(points2d.size());
+
+  for (int frame = 1; frame <= nframes; ++frame)
+  {
+    const int ntracks = points2d[frame-1].cols;
+
+    for (int track = 1; track <= ntracks; ++track)
+    {
+      const Vec2d track_pt = points2d[frame-1].col(track-1);
+      if ( ( track_pt[0] != 0 && track_pt[1] != 0 ) &&
+           ( track_pt[0] != -1 && track_pt[1] != -1 ) )
+      {
+        //cout << frame << " " << track << " " << track_pt << endl;
+        tracks.Insert(frame, track, track_pt[0], track_pt[1]);
+      }
+
+    }
+
+  }
+}
+
+
+void
+parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
+{
+  std::set<Matches::ImageID>::const_iterator iter_image =
+      matches.get_images().begin();
+
+  bool is_first_time = true;
+
+  for (; iter_image != matches.get_images().end(); ++iter_image) {
+    // Exports points
+    Matches::Features<PointFeature> pfeatures =
+        matches.InImage<PointFeature>(*iter_image);
+
+    while(pfeatures) {
+
+      double x = pfeatures.feature()->x(),
+             y = pfeatures.feature()->y();
+
+      // valid marker
+      if ( x > 0 && y > 0 )
+      {
+          tracks.Insert(*iter_image+1, pfeatures.track()+1, x, y);
+
+          if ( is_first_time )
+              is_first_time = false;
+      }
+
+      // lost track
+      else if ( x < 0 && y < 0 )
+      {
+          is_first_time = true;
+      }
+
+      pfeatures.operator++();
+    }
+  }
+}
+
+
 template <class T>
 void
 libmv_solveReconstructionImpl( const std::vector<std::string> &images,
@@ -239,19 +303,7 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
   // Building tracks
   libmv::Tracks tracks;
   libmv::Matches matches = nViewMatcher.getMatches();
-
-  //parser_2D_tracks( matches, tracks );
-
-
-  // Initial reconstruction
-  //const int keyframe1 = 1, keyframe2 = matches.NumImages();
-//  const int keyframe1 = 1, keyframe2 = 2;
-//
-//  const double focal_length = K(0,0);
-//  const double principal_x = K(0,2), principal_y = K(1,2), k1 = 0, k2 = 0, k3 = 0;
-//
-//  // Refinement parameters
-//  int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+  parser_2D_tracks( matches, tracks );
 
   // Perform reconstruction
   libmv_solveReconstruction( tracks, keyframe1, keyframe2,
@@ -270,11 +322,11 @@ public:
            double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
 
+    // Parse 2d points to Tracks
     libmv::Tracks tracks;
-    // TODO: add parser
-    // parser_2D_tracks(points2d, tracks);
+    parser_2D_tracks(points2d, tracks);
 
-
+    // Perform reconstruction
     libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                               libmv_reconstruction_, refine_intrinsics);
   }
@@ -285,6 +337,8 @@ public:
     libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                                   libmv_reconstruction_, refine_intrinsics);
   }
+
+  virtual double getError() { return libmv_reconstruction_.error; }
 
 };
 
@@ -298,11 +352,11 @@ public:
   virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
+    // Parse 2d points to Tracks
     libmv::Tracks tracks;
-    // TODO: add parser
-    // parser_2D_tracks(points2d, tracks);
+    parser_2D_tracks(points2d, tracks);
 
-
+    // Perform reconstruction
     libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                               libmv_reconstruction_, refine_intrinsics);
   }
@@ -313,6 +367,8 @@ public:
     libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                                   libmv_reconstruction_, refine_intrinsics);
   }
+
+  virtual double getError() { return libmv_reconstruction_.error; }
 
 };
 
@@ -326,11 +382,11 @@ public:
   virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
            double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
+    // Parse 2d points to Tracks
     libmv::Tracks tracks;
-    // TODO: add parser
-    // parser_2D_tracks(points2d, tracks);
+    parser_2D_tracks(points2d, tracks);
 
-
+    // Perform reconstruction
     libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                               libmv_reconstruction_, refine_intrinsics);
   }
@@ -342,7 +398,11 @@ public:
                                   libmv_reconstruction_, refine_intrinsics);
   }
 
+  virtual double getError() { return libmv_reconstruction_.error; }
+
 };
+
+
 
 Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
 {
@@ -359,68 +419,6 @@ Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::crea
   return makePtr<SFMLibmvUncalibratedReconstructionImpl>();
 }
 
-
-//void
-//parser_2D_tracks( const std::vector<cv::Mat> &points2d, libmv::Tracks &tracks )
-//{
-//  const int nframes = static_cast<int>(points2d.size());
-//
-//  for (int frame = 1; frame <= nframes; ++frame)
-//  {
-//    const int ntracks = points2d[frame-1].cols;
-//
-//    for (int track = 1; track <= ntracks; ++track)
-//    {
-//      const Vec2d track_pt = points2d[frame-1].col(track-1);
-//      if ( ( track_pt[0] != 0 && track_pt[1] != 0 ) &&
-//           ( track_pt[0] != -1 && track_pt[1] != -1 ) )
-//      {
-//        //cout << frame << " " << track << " " << track_pt << endl;
-//        tracks.Insert(frame, track, track_pt[0], track_pt[1]);
-//      }
-//
-//    }
-//
-//  }
-//}
-//
-//void
-//parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
-//{
-//  std::set<Matches::ImageID>::const_iterator iter_image =
-//      matches.get_images().begin();
-//
-//  bool is_first_time = true;
-//
-//  for (; iter_image != matches.get_images().end(); ++iter_image) {
-//    // Exports points
-//    Matches::Features<PointFeature> pfeatures =
-//        matches.InImage<PointFeature>(*iter_image);
-//
-//    while(pfeatures) {
-//
-//      double x = pfeatures.feature()->x(),
-//             y = pfeatures.feature()->y();
-//
-//      // valid marker
-//      if ( x > 0 && y > 0 )
-//      {
-//          tracks.Insert(*iter_image+1, pfeatures.track()+1, x, y);
-//
-//          if ( is_first_time )
-//              is_first_time = false;
-//      }
-//
-//      // lost track
-//      else if ( x < 0 && y < 0 )
-//      {
-//          is_first_time = true;
-//      }
-//
-//      pfeatures.operator++();
-//    }
-//  }
-//}
 
 
 template void libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(

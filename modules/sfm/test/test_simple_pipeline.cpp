@@ -52,15 +52,14 @@ TEST(Sfm_simple_pipeline, backyard)
 {
     //V3D::optimizerVerbosenessLevel = 0; // less logging messages
 
-    Ptr<SFMLibmvEuclideanReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+    Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
 
     string trackFilename =
       string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
 
     // Get tracks from file: check backyard.blend file
     std::vector < Mat_<double> > points2d;
-    //parser_2D_tracks( trackFilename, points2d );
-
+    parser_2D_tracks( trackFilename, points2d );
 
     // Initial reconstruction
     int keyframe1 = 1, keyframe2 = 30;
@@ -74,9 +73,10 @@ TEST(Sfm_simple_pipeline, backyard)
     euclidean_reconstruction->run(points2d, keyframe1, keyframe2, focal_length,
                                   principal_x, principal_y, k1, k2, k3, refine_intrinsics);
 
-    //cout << "libmv_reconstruction.error = " << euclidean_reconstruction->libmv_reconstruction_.error << endl;
+    double error = euclidean_reconstruction->getError();
+    cout << "euclidean_reconstruction error = " << error << endl;
 
-    //EXPECT_LE( libmv_reconstruction.error, 1.4 );  // actually 1.38671
+    EXPECT_LE( error, 1.4 );  // actually 1.38671
 }
 
 #endif /* CERES_FOUND */
