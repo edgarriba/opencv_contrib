@@ -216,13 +216,57 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 }
 
 
+template <class T>
+void
+libmv_solveReconstructionImpl( const std::vector<std::string> &images,
+                               int keyframe1, int keyframe2,
+                               double focal_length,
+                               double principal_x, double principal_y,
+                               double k1, double k2, double k3,
+                               T &libmv_reconstruction,
+                               int refine_intrinsics)
+{
+  Ptr<Feature2D> edetector = ORB::create(10000);
+  Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
+  //Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create(64, true, 4);
+
+  cout << "Initialize nViewMatcher ... ";
+  libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
+
+  cout << "OK" << endl << "Performing Cross Matching ... ";
+  nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
+
+  // Building tracks
+  libmv::Tracks tracks;
+  libmv::Matches matches = nViewMatcher.getMatches();
+
+  //parser_2D_tracks( matches, tracks );
+
+
+  // Initial reconstruction
+  //const int keyframe1 = 1, keyframe2 = matches.NumImages();
+//  const int keyframe1 = 1, keyframe2 = 2;
+//
+//  const double focal_length = K(0,0);
+//  const double principal_x = K(0,2), principal_y = K(1,2), k1 = 0, k2 = 0, k3 = 0;
+//
+//  // Refinement parameters
+//  int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
+
+  // Perform reconstruction
+  libmv_solveReconstruction( tracks, keyframe1, keyframe2,
+                             focal_length, principal_x, principal_y, k1, k2, k3,
+                             libmv_reconstruction, refine_intrinsics );
+}
+
+
 class SFMLibmvEuclideanReconstructionImpl : public SFMLibmvEuclideanReconstruction
 {
 private:
   libmv_EuclideanReconstruction libmv_reconstruction_;
 
 public:
-  void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
+  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
            double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
 
@@ -234,6 +278,14 @@ public:
     libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                               libmv_reconstruction_, refine_intrinsics);
   }
+
+  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
+                                  libmv_reconstruction_, refine_intrinsics);
+  }
+
 };
 
 
@@ -243,7 +295,35 @@ private:
   libmv_ProjectiveReconstruction libmv_reconstruction_;
 
 public:
-  void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
+  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    libmv::Tracks tracks;
+    // TODO: add parser
+    // parser_2D_tracks(points2d, tracks);
+
+
+    libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
+                              libmv_reconstruction_, refine_intrinsics);
+  }
+
+  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
+                                  libmv_reconstruction_, refine_intrinsics);
+  }
+
+};
+
+
+class SFMLibmvUncalibratedReconstructionImpl : public SFMLibmvUncalibratedReconstruction
+{
+private:
+  libmv_UncalibratedReconstruction  libmv_reconstruction_;
+
+public:
+  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
            double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
     libmv::Tracks tracks;
@@ -254,25 +334,12 @@ public:
     libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
                               libmv_reconstruction_, refine_intrinsics);
   }
-};
 
-
-class SFMLibmvUncalibratedReconstructionImpl : public SFMLibmvUncalibratedReconstruction
-{
-private:
-  libmv_UncalibratedReconstruction  libmv_reconstruction_;
-
-public:
-  void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
-           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
-    libmv::Tracks tracks;
-    // TODO: add parser
-    // parser_2D_tracks(points2d, tracks);
-
-
-    libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                              libmv_reconstruction_, refine_intrinsics);
+    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
+                                  libmv_reconstruction_, refine_intrinsics);
   }
 
 };
@@ -291,49 +358,6 @@ Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::crea
 {
   return makePtr<SFMLibmvUncalibratedReconstructionImpl>();
 }
-
-
-
-
-//template <class T>
-//void
-//libmv_solveReconstructionImpl( const std::vector<std::string> &images,
-//                               const cv::Matx33d &K,
-//                               T &libmv_reconstruction)
-//{
-//  Ptr<Feature2D> edetector = ORB::create(10000);
-//  Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
-//  //Ptr<Feature2D> edescriber = xfeatures2d::LATCH::create(64, true, 4);
-//
-//  cout << "Initialize nViewMatcher ... ";
-//  libmv::correspondence::nRobustViewMatching nViewMatcher(edetector, edescriber);
-//
-//  cout << "OK" << endl << "Performing Cross Matching ... ";
-//  nViewMatcher.computeCrossMatch(images); cout << "OK" << endl;
-//
-//  // Building tracks
-//  libmv::Tracks tracks;
-//  libmv::Matches matches = nViewMatcher.getMatches();
-//
-//  //parser_2D_tracks( matches, tracks );
-//
-//
-//  // Initial reconstruction
-//  //const int keyframe1 = 1, keyframe2 = matches.NumImages();
-//  const int keyframe1 = 1, keyframe2 = 2;
-//
-//  const double focal_length = K(0,0);
-//  const double principal_x = K(0,2), principal_y = K(1,2), k1 = 0, k2 = 0, k3 = 0;
-//
-//  // Refinement parameters
-//  int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */
-//
-//  // Perform reconstruction
-//  libmv_solveReconstruction( tracks, keyframe1, keyframe2,
-//                             focal_length, principal_x, principal_y, k1, k2, k3,
-//                             libmv_reconstruction, refine_intrinsics );
-//
-//}
 
 
 //void
@@ -399,20 +423,20 @@ Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::crea
 //}
 
 
-//template void libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(
-//  const std::vector<std::string> &images,
-//  const cv::Matx33d &K,
-//  libmv_EuclideanReconstruction &libmv_reconstruction);
-//
-//template void libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(
-//  const std::vector<std::string> &images,
-//  const cv::Matx33d &K,
-//  libmv_ProjectiveReconstruction &libmv_reconstruction);
-//
-//template void libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(
-//  const std::vector<std::string> &images,
-//  const cv::Matx33d &K,
-//  libmv_UncalibratedReconstruction &libmv_reconstruction);
+template void libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(
+  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
+  double principal_x, double principal_y, double k1, double k2, double k3,
+  libmv_EuclideanReconstruction &libmv_reconstruction, int refine_intrinsics);
+
+template void libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(
+  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
+  double principal_x, double principal_y, double k1, double k2, double k3,
+  libmv_ProjectiveReconstruction &libmv_reconstruction, int refine_intrinsics);
+
+template void libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(
+  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
+  double principal_x, double principal_y, double k1, double k2, double k3,
+  libmv_UncalibratedReconstruction &libmv_reconstruction, int refine_intrinsics);
 
 } /* namespace cv */
 } /* namespace sfm */
