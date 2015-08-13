@@ -56,6 +56,46 @@ enum { SFM_BUNDLE_FOCAL_LENGTH    = libmv::BUNDLE_FOCAL_LENGTH,
        SFM_BUNDLE_TANGENTIAL      = libmv::BUNDLE_TANGENTIAL
 };
 
+class CV_EXPORTS SFMLibmvBaseReconstruction
+{
+public:
+  virtual ~SFMLibmvBaseReconstruction() {};
+  virtual void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
+
+};
+
+class CV_EXPORTS SFMLibmvEuclideanReconstruction : public SFMLibmvBaseReconstruction
+{
+public:
+  virtual void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0);
+
+  /** @brief Creates an instance of the SFMLibmvEuclideanReconstruction class. Initializes Libmv. */
+  static Ptr<SFMLibmvEuclideanReconstruction> create();
+};
+
+class CV_EXPORTS SFMLibmvProjectiveReconstruction : public SFMLibmvBaseReconstruction
+{
+public:
+  virtual void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0);
+
+  /** @brief Creates an instance of the SFMLibmvProjectiveReconstruction class. Initializes Libmv. */
+  static Ptr<SFMLibmvProjectiveReconstruction> create();
+};
+
+class CV_EXPORTS SFMLibmvUncalibratedReconstruction : public SFMLibmvBaseReconstruction
+{
+public:
+  virtual void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0);
+
+  /** @brief Creates an instance of the SFMLibmvUncalibratedReconstruction class. Initializes Libmv. */
+  static Ptr<SFMLibmvUncalibratedReconstruction> create();
+};
+
+
 typedef struct libmv_ReconstructionBase
 {
   /* used for per-track average error calculation after reconstruction */

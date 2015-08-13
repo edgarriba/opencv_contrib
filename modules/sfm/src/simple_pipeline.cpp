@@ -55,6 +55,163 @@ using namespace std;
 namespace cv
 {
 
+typedef struct LibmvReconstructionBase
+{
+  /* used for per-track average error calculation after reconstruction */
+  libmv::Tracks tracks;
+  libmv::CameraIntrinsics intrinsics;
+
+  double error;
+
+} LibmvReconstructionBase;
+
+
+class SFMLibmvEuclideanReconstructionImpl : public SFMLibmvEuclideanReconstruction
+{
+private:
+  LibmvReconstructionBase reconstruction_base_;
+  libmv::EuclideanReconstruction reconstruction_;
+
+public:
+  void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    /* Invert the camera intrinsics. */
+    libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
+    libmv::EuclideanReconstruction *reconstruction = &reconstruction_;
+    libmv::CameraIntrinsics *intrinsics = &reconstruction_base_.intrinsics;
+
+    intrinsics->SetFocalLength(focal_length, focal_length);
+    intrinsics->SetPrincipalPoint(principal_x, principal_y);
+    intrinsics->SetRadialDistortion(k1, k2, k3);
+
+    cout << "\tNumber of markers: " << markers.size() << endl;
+    for (int i = 0; i < markers.size(); ++i)
+    {
+      intrinsics->InvertIntrinsics(markers[i].x,
+                                   markers[i].y,
+                                   &(markers[i].x),
+                                   &(markers[i].y));
+    }
+
+    libmv::Tracks normalized_tracks(markers);
+
+    cout << "\tframes to init from: " << keyframe1 << " " << keyframe2 << endl;
+    libmv::vector<libmv::Marker> keyframe_markers =
+        normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
+    cout << "\tNumber of markers for init: " << keyframe_markers.size() << endl;
+
+    libmv::EuclideanReconstructTwoFrames(keyframe_markers, reconstruction);
+    libmv::EuclideanBundle(normalized_tracks, reconstruction);
+    libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(), normalized_tracks, reconstruction);
+
+    if (refine_intrinsics)
+    {
+      libmv::EuclideanBundleCommonIntrinsics( tracks, refine_intrinsics, libmv::BUNDLE_NO_CONSTRAINTS, reconstruction, intrinsics);
+    }
+
+    reconstruction_base_.tracks = tracks;
+    reconstruction_base_.error = libmv::EuclideanReprojectionError(tracks, *reconstruction, *intrinsics);
+
+  }
+
+};
+
+class SFMLibmvProjectiveReconstructionImpl : public SFMLibmvProjectiveReconstruction
+{
+private:
+  LibmvReconstructionBase reconstruction_base_;
+  libmv::ProjectiveReconstruction reconstruction_;
+
+public:
+  void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    /* Invert the camera intrinsics. */
+    libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
+    libmv::ProjectiveReconstruction *reconstruction = &reconstruction_;
+    libmv::CameraIntrinsics *intrinsics = &reconstruction_base_.intrinsics;
+
+    intrinsics->SetFocalLength(focal_length, focal_length);
+    intrinsics->SetPrincipalPoint(principal_x, principal_y);
+    intrinsics->SetRadialDistortion(k1, k2, k3);
+
+    cout << "\tNumber of markers: " << markers.size() << endl;
+    for (int i = 0; i < markers.size(); ++i)
+    {
+      intrinsics->InvertIntrinsics(markers[i].x,
+                                   markers[i].y,
+                                   &(markers[i].x),
+                                   &(markers[i].y));
+    }
+
+    libmv::Tracks normalized_tracks(markers);
+
+    cout << "\tframes to init from: " << keyframe1 << " " << keyframe2 << endl;
+    libmv::vector<libmv::Marker> keyframe_markers =
+        normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
+    cout << "\tNumber of markers for init: " << keyframe_markers.size() << endl;
+
+    libmv::ProjectiveReconstructTwoFrames(keyframe_markers, reconstruction);
+    libmv::ProjectiveBundle(normalized_tracks, reconstruction);
+    libmv::ProjectiveCompleteReconstruction(libmv::ReconstructionOptions(), normalized_tracks, reconstruction);
+
+  //  if (refine_intrinsics)
+  //  {
+  //    libmv::ProjectiveBundleCommonIntrinsics( tracks, refine_intrinsics, libmv::BUNDLE_NO_CONSTRAINTS, reconstruction, intrinsics);
+  //  }
+
+    reconstruction_base_.tracks = tracks;
+    reconstruction_base_.error = libmv::ProjectiveReprojectionError(tracks, *reconstruction, *intrinsics);
+
+  }
+
+};
+
+class SFMLibmvUncalibratedReconstructionImpl : public SFMLibmvUncalibratedReconstruction
+{
+private:
+  LibmvReconstructionBase reconstruction_base_;
+  libmv::EuclideanReconstruction euclidean_reconstruction_;
+  libmv::ProjectiveReconstruction projective_reconstruction_;
+
+public:
+  void run(const libmv::Tracks &tracks, int keyframe1, int keyframe2, double focal_length,
+           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  {
+    UncalibratedReconstructor uncalibrated_reconstructor( principal_x, principal_y, keyframe1, keyframe2, tracks);
+
+    reconstruction_base_.tracks = uncalibrated_reconstructor.calibrated_tracks();
+    reconstruction_base_.intrinsics = uncalibrated_reconstructor.camera_intrinsics();
+
+    euclidean_reconstruction_ = uncalibrated_reconstructor.euclidean_reconstruction();
+    projective_reconstruction_ = uncalibrated_reconstructor.projective_reconstruction();
+
+    reconstruction_base_.error =
+      ProjectiveReprojectionError(reconstruction_base_.tracks,
+                                  projective_reconstruction_,
+                                  reconstruction_base_.intrinsics);
+
+
+  }
+
+};
+
+Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
+{
+  return makePtr<SFMLibmvEuclideanReconstructionImpl>();
+}
+
+Ptr<SFMLibmvProjectiveReconstruction> SFMLibmvProjectiveReconstruction::create()
+{
+  return makePtr<SFMLibmvProjectiveReconstructionImpl>();
+}
+
+Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::create()
+{
+  return makePtr<SFMLibmvUncalibratedReconstructionImpl>();
+}
+
 void
 libmv_solveReconstruction( const libmv::Tracks &tracks,
                            int keyframe1, int keyframe2,
