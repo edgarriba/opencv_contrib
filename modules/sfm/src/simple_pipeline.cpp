@@ -419,23 +419,6 @@ Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::crea
   return makePtr<SFMLibmvUncalibratedReconstructionImpl>();
 }
 
-
-
-template void libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(
-  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
-  double principal_x, double principal_y, double k1, double k2, double k3,
-  libmv_EuclideanReconstruction &libmv_reconstruction, int refine_intrinsics);
-
-template void libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(
-  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
-  double principal_x, double principal_y, double k1, double k2, double k3,
-  libmv_ProjectiveReconstruction &libmv_reconstruction, int refine_intrinsics);
-
-template void libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(
-  const std::vector<std::string> &images, int keyframe1, int keyframe2, double focal_length,
-  double principal_x, double principal_y, double k1, double k2, double k3,
-  libmv_UncalibratedReconstruction &libmv_reconstruction, int refine_intrinsics);
-
 } /* namespace cv */
 } /* namespace sfm */
 
