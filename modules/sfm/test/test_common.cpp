@@ -80,7 +80,7 @@ expectFundamentalProperties( const cv::Matx33d &F,
 
 
 void
-parser_2D_tracks(const string &_filename, std::vector < Mat_<double> > &points2d )
+parser_2D_tracks(const string &_filename, std::vector<Mat> &points2d )
 {
   ifstream myfile(_filename.c_str());
 
@@ -93,6 +93,7 @@ parser_2D_tracks(const string &_filename, std::vector < Mat_<double> > &points2d
 
     double x, y;
     string line_str;
+    Mat nan_mat = Mat(2, 1 , CV_64F, -1);
     int n_frames = 0, n_tracks = 0, track = 0;
 
     while ( getline(myfile, line_str) )
@@ -104,7 +105,7 @@ parser_2D_tracks(const string &_filename, std::vector < Mat_<double> > &points2d
         n_tracks = track;
 
         for (int i = 0; i < n_frames; ++i)
-          cv::hconcat(points2d[i], Mat_<double>(2,1,-1), points2d[i]);
+          cv::hconcat(points2d[i], nan_mat, points2d[i]);
       }
 
       for (int frame = 1; line >> x >> y; ++frame)
@@ -112,11 +113,11 @@ parser_2D_tracks(const string &_filename, std::vector < Mat_<double> > &points2d
         if ( frame > n_frames )
         {
           n_frames = frame;
-          points2d.push_back(Mat_<double>(2,1,-1));
+          points2d.push_back(nan_mat);
         }
 
-        points2d[frame-1](0,track) = x;
-        points2d[frame-1](1,track) = y;
+        points2d[frame-1].at<double>(0,track) = x;
+        points2d[frame-1].at<double>(1,track) = y;
       }
 
       ++track;

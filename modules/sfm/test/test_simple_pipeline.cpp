@@ -58,7 +58,7 @@ TEST(Sfm_simple_pipeline, backyard)
       string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
 
     // Get tracks from file: check backyard.blend file
-    std::vector < Mat_<double> > points2d;
+    std::vector<Mat> points2d;
     parser_2D_tracks( trackFilename, points2d );
 
     // Initial reconstruction

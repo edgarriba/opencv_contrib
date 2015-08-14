@@ -217,7 +217,7 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
 
 
 void
-parser_2D_tracks( const std::vector<Mat_<double> > &points2d, libmv::Tracks &tracks )
+parser_2D_tracks( const std::vector<Mat> &points2d, libmv::Tracks &tracks )
 {
   const int nframes = static_cast<int>(points2d.size());
 
@@ -318,8 +318,8 @@ private:
   T libmv_reconstruction_;
 
 public:
-  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
-           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  virtual void run(const std::vector<Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
+                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
     // Parse 2d points to Tracks
     libmv::Tracks tracks;

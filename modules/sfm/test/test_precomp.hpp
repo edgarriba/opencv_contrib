@@ -135,7 +135,7 @@ namespace cvtest
    *
    */
   void
-  parser_2D_tracks(const std::string &_filename, std::vector < cv::Mat_<double> > &points2d );
+  parser_2D_tracks(const std::string &_filename, std::vector<cv::Mat> &points2d );
 
 } // namespace cvtest
 
