@@ -64,7 +64,6 @@ int main(int argc, char* argv[])
   Matx33d K;
   Mat_<double> points3d;
   const bool is_projective = true;
-  //generateScene(nviews, npoints, is_projective, K, Rs, ts, Ps, points3d, points2d);
   generateScene(nviews, npoints, K, Rs, ts, Ps, points3d, points2d);
 
 
@@ -153,7 +152,7 @@ int main(int argc, char* argv[])
 
   std::vector<Affine3d> path_est;
   for (size_t i = 0; i < Rs_est.size(); ++i)
-    path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
+      path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
   if ( Rs_est.size() > 0 )
     path_est.push_back(Affine3d(Rs_est[0],ts_est[0]));
 
@@ -355,7 +354,7 @@ generateScene(const size_t n_views, const size_t n_points, Matx33d & K, std::vec
            point2d[1] < 0 || point2d[1] > img_height )
       {
         //cout << pt << endl;
-        cv::Mat(Vec2d(-1,-1)).copyTo(points2d[i].col(j));
+        //cv::Mat(Vec2d(-1,-1)).copyTo(points2d[i].col(j));
         //cv::Mat_<double>(2,1,-1).copyTo(points2d[i].col(j));
       }
       else

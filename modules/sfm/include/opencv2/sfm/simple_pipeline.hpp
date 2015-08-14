@@ -63,6 +63,9 @@ public:
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
 
   virtual double getError() = 0;
+  virtual cv::Mat getPoints() = 0;
+  virtual cv::Mat getIntrinsics() = 0;
+  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
 };
 
 
@@ -76,26 +79,32 @@ public:
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
 
   virtual double getError() = 0;
+  virtual cv::Mat getPoints() = 0;
+  virtual cv::Mat getIntrinsics() = 0;
+  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
 
   /** @brief Creates an instance of the SFMLibmvEuclideanReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvEuclideanReconstruction> create();
 };
 
 
-class CV_EXPORTS SFMLibmvProjectiveReconstruction : public SFMLibmvReconstruction
-{
-public:
-  virtual void run(const std::vector<cv::Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-
-  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-
-  virtual double getError() = 0;
-
-  /** @brief Creates an instance of the SFMLibmvProjectiveReconstruction class. Initializes Libmv. */
-  static Ptr<SFMLibmvProjectiveReconstruction> create();
-};
+//class CV_EXPORTS SFMLibmvProjectiveReconstruction : public SFMLibmvReconstruction
+//{
+//public:
+//  virtual void run(const std::vector<cv::Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
+//                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
+//
+//  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
+//                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
+//
+//  virtual double getError() = 0;
+//  virtual cv::Mat getPoints() = 0;
+//  virtual cv::Mat getIntrinsics() = 0;4
+//  virtual std::vector<cv::Mat> getCameras() = 0;
+//
+//  /** @brief Creates an instance of the SFMLibmvProjectiveReconstruction class. Initializes Libmv. */
+//  static Ptr<SFMLibmvProjectiveReconstruction> create();
+//};
 
 
 class CV_EXPORTS SFMLibmvUncalibratedReconstruction : public SFMLibmvReconstruction
@@ -108,6 +117,9 @@ public:
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
 
   virtual double getError() = 0;
+  virtual cv::Mat getPoints() = 0;
+  virtual cv::Mat getIntrinsics() = 0;
+  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
 
   /** @brief Creates an instance of the SFMLibmvUncalibratedReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvUncalibratedReconstruction> create();

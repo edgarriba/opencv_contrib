@@ -64,6 +64,24 @@ using namespace std;
 
 namespace cv
 {
+  template<class T>
+  void
+  reconstruct_(const T input, const Matx33d Ka, Ptr<SFMLibmvReconstruction> reconstruction)
+  {
+    // Initial reconstruction
+    const int keyframe1 = 1, keyframe2 = 30;
+
+    // Camera data
+    const double focal_length = Ka(0,0);
+    const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+
+    // Refinement parameters
+    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
+
+    // Run reconstruction pipeline
+    reconstruction->run(input, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3, refine_intrinsics);
+  }
+
 
   //  Reconstruction function for API
   void
@@ -115,6 +133,7 @@ namespace cv
 
     }
 
+
     // Affine reconstruction
 
     else
@@ -147,8 +166,6 @@ namespace cv
     points2d.getMatVector(pts2d);
 
     const int depth = pts2d[0].depth();
-    Rs.create(nviews, 1, depth);
-    Ts.create(nviews, 1, depth);
 
     Matx33d Ka, R;
     Vec3d t;
@@ -158,7 +175,11 @@ namespace cv
       std::vector < Mat > Ps_estimated;
       reconstruct(points2d, Ps_estimated, points3d, is_projective, has_outliers, is_sequence);
 
-      for(unsigned int i = 0; i < nviews; ++i)
+      const int nviews_est = Ps_estimated.size();
+      Rs.create(nviews_est, 1, depth);
+      Ts.create(nviews_est, 1, depth);
+
+      for(unsigned int i = 0; i < nviews_est; ++i)
       {
         KRt_From_P(Ps_estimated[i], Ka, R, t);
         Mat(R).copyTo(Rs.getMatRef(i));
@@ -172,113 +193,45 @@ namespace cv
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
 
       Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+      reconstruct_(pts2d, Ka, euclidean_reconstruction);
 
-      //Initial reconstruction
-      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
+      // Extract estimated camera poses
+      std::vector<std::pair<Matx33d,Vec3d> > cameras = euclidean_reconstruction->getCameras();
 
-      // Camera data
-      const double focal_length = Ka(0,0);
-      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
+      const int nviews_est = cameras.size();
+      Rs.create(nviews_est, 1, depth);
+      Ts.create(nviews_est, 1, depth);
 
-      // Refinement parameters
-      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
+      for (size_t i = 0; i < nviews_est; ++i)
+      {
+        Mat(cameras[i].first).copyTo(Rs.getMatRef(i));
+        Mat(cameras[i].second).copyTo(Ts.getMatRef(i));
+      }
 
-      // TODO: convert pts2d to vector<Mat_<double> >
-      //euclidean_reconstruction->run(pts2d, keyframe1, keyframe2, focal_length,
-      //                              principal_x, principal_y, k1, k2, k3, refine_intrinsics);
+      // Extract reconstructed points
+      Mat points3d_ = euclidean_reconstruction->getPoints();
+      points3d.create(3, points3d_.cols, CV_64F);
+      points3d_.copyTo(points3d);
 
-      // TODO: extract cameras and points
-
-
-//      // Get tracks from 2d points
-//      //libmv::Tracks tracks;
-//
-//      if (is_sequence)
-//      {
-//        // Pairwise tracking
-//        //parser_2D_tracks( pts2d, tracks );
-//      }
-//      else
-//      { /*TODO: think in something*/ }
-//
-//      // Initial reconstruction
-//      const int keyframe1 = 1, keyframe2 = 0.3*(double)nviews;
-//
-//      // Camera data
-//      const double focal_length = Ka(0,0);
-//      const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
-//
-//      // Refinement parameters
-//      libmv_EuclideanReconstruction libmv_reconstruction;
-//      int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
-//
-//      // Perform reconstruction
-//      libmv_solveReconstruction( tracks, keyframe1, keyframe2,
-//                                 focal_length, principal_x, principal_y, k1, k2, k3,
-//                                 libmv_reconstruction, refine_intrinsics );
-//
-//      // Extract estimated camera poses
-//      for(unsigned int i = 0; i < nviews; ++i)
-//      {
-//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
-//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
-//        Mat(R).copyTo(Rs.getMatRef(i));
-//        Mat(t).copyTo(Ts.getMatRef(i));
-//      }
-//
-//      // Extract reconstructed points
-//      size_t n_points =
-//        (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-//
-//      points3d.create(3, n_points, CV_64F);
-//      Mat points3d_ = points3d.getMat();
-//
-//      for ( unsigned i = 0; i < n_points; ++i )
-//        for ( int j = 0; j < 3; ++j )
-//          points3d_.at<double>(j, i) =
-//            libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
-//
-//      // Extract refined intrinsic parameters
-//      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-//      Mat(Ka).copyTo(K.getMat());
+      // Extract refined intrinsic parameters
+      euclidean_reconstruction->getIntrinsics().copyTo(K.getMat());
     }
 
   }
 
 
   void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K)
+  reconstruct(const std::vector<string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K)
   {
     Matx33d Ka = K.getMat();
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
     CV_Assert( images.size() >= (unsigned)2 );
 
-//    libmv_ProjectiveReconstruction libmv_reconstruction;
-//    libmv_solveReconstructionImpl<libmv_ProjectiveReconstruction>(images, Ka, libmv_reconstruction);
-//
-//    const int depth = K.getMat().depth();
-//    const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
-//    projection_matrices.create(nviews, 1, depth);
-//
-//    // Extract estimated projection matrices
-//    Matx34d P;
-//    for(unsigned int i = 0; i < nviews; ++i)
-//    {
-//      eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].P, P);
-//      Mat(P).copyTo(projection_matrices.getMatRef(i));
-//    }
-//
-//    // Extract reconstructed points
-//    size_t n_points =
-//      (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-//
-//    points3d.create(3, n_points, depth);
-//    Mat points3d_ = points3d.getMat();
-//
-//    for ( unsigned i = 0; i < n_points; ++i )
-//      for ( int j = 0; j < 3; ++j )
-//        points3d_.at<double>(j, i) =
-//          libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
+    std::vector<Mat> Rs, Ts;
+    reconstruct(images, Rs, Ts, Ka, points3d, false);
+
+    // TODO: from Rs and Ts, extract Ps
+
   }
 
 
@@ -292,65 +245,38 @@ namespace cv
 
     if ( is_projective )
     {
-      std::vector < Mat > Ps_estimated;
-      reconstruct(images, Ps_estimated, points3d, Ka);
-
-      const int depth = K.getMat().depth();
-      const unsigned nviews = Ps_estimated.size();
-
-      Rs.create(nviews, 1, depth);
-      Ts.create(nviews, 1, depth);
-
-      Matx33d R; Vec3d t;
-      for(unsigned int i = 0; i < nviews; ++i)
-      {
-        KRt_From_P(Ps_estimated[i], Ka, R, t);
-        Mat(R).copyTo(Rs.getMatRef(i));
-        Mat(t).copyTo(Ts.getMatRef(i));
-      }
+//      std::vector < Mat > Ps_estimated;
+//      reconstruct(images, Ps_estimated, points3d, Ka);
+//
+//      const int depth = K.getMat().depth();
+//      const unsigned nviews = Ps_estimated.size();
+//
+//      Rs.create(nviews, 1, depth);
+//      Ts.create(nviews, 1, depth);
+//
+//      Matx33d R; Vec3d t;
+//      for(unsigned int i = 0; i < nviews; ++i)
+//      {
+//        KRt_From_P(Ps_estimated[i], Ka, R, t);
+//        Mat(R).copyTo(Rs.getMatRef(i));
+//        Mat(t).copyTo(Ts.getMatRef(i));
+//      }
 
     }
     else
     {
 
-//      libmv_EuclideanReconstruction libmv_reconstruction;
-//      libmv_solveReconstructionImpl<libmv_EuclideanReconstruction>(images, Ka, libmv_reconstruction);
-//
-//      const int depth = K.getMat().depth();
-//      const unsigned nviews = libmv_reconstruction.reconstruction.AllCameras().size();
-//      Rs.create(nviews, 1, depth);
-//      Ts.create(nviews, 1, depth);
-//
-//      // Extract estimated camera poses
-//      Matx33d R; Vec3d t;
-//      for(unsigned int i = 0; i < nviews; ++i)
-//      {
-//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].R, R);
-//        eigen2cv(libmv_reconstruction.reconstruction.AllCameras()[i].t, t);
-//        Mat(R).copyTo(Rs.getMatRef(i));
-//        Mat(t).copyTo(Ts.getMatRef(i));
-//      }
-//
-//      // Extract reconstructed points
-//      size_t n_points = (unsigned) libmv_reconstruction.reconstruction.AllPoints().size();
-//
-//      points3d.create(3, n_points, depth);
-//      Mat points3d_ = points3d.getMat();
-//
-//      for ( unsigned i = 0; i < n_points; ++i )
-//        for ( int j = 0; j < 3; ++j )
-//          points3d_.at<double>(j, i) = libmv_reconstruction.reconstruction.AllPoints()[i].X[j];
-//
-//      // Extract refined intrinsic parameters
-//      eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-//      Mat(Ka).copyTo(K.getMat());
+      Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+      reconstruct_(images, Ka, euclidean_reconstruction);
+
+      // TODO: extract data
     }
 
   }
 
   //TODO: ONLY CALLS UNCALIBRATED PIPELINE. DECIDE TO INCLUDE OR NOT
   void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
+  reconstruct(const std::vector<string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               OutputArray K, OutputArray points3d, int method)
   {
     int width = 0, height = 0;
@@ -365,39 +291,10 @@ namespace cv
                           0, 0, width,
                           0, 0,      1);
 
-//    libmv_UncalibratedReconstruction libmv_reconstruction;
-//    libmv_solveReconstructionImpl<libmv_UncalibratedReconstruction>(images, Ka, libmv_reconstruction);
-//
-//    const int depth = K.getMat().depth();
-//    const unsigned nviews = libmv_reconstruction.euclidean_reconstruction.AllCameras().size();
-//    Rs.create(nviews, 1, depth);
-//    Ts.create(nviews, 1, depth);
-//
-//    // Extract estimated camera poses
-//    Matx33d R; Vec3d t;
-//    for(unsigned int i = 0; i < nviews; ++i)
-//    {
-//      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].R, R);
-//      eigen2cv(libmv_reconstruction.euclidean_reconstruction.AllCameras()[i].t, t);
-//      Mat(R).copyTo(Rs.getMatRef(i));
-//      Mat(t).copyTo(Ts.getMatRef(i));
-//    }
-//
-//    // Extract reconstructed points
-//    size_t n_points =
-//      (unsigned) libmv_reconstruction.euclidean_reconstruction.AllPoints().size();
-//
-//    points3d.create(3, n_points, depth);
-//    Mat points3d_ = points3d.getMat();
-//
-//    for ( unsigned i = 0; i < n_points; ++i )
-//      for ( int j = 0; j < 3; ++j )
-//        points3d_.at<double>(j, i) =
-//          libmv_reconstruction.euclidean_reconstruction.AllPoints()[i].X[j];
-//
-//    // Extract refined intrinsic parameters
-//    eigen2cv(libmv_reconstruction.intrinsics.K(), Ka);
-//    Mat(Ka).copyTo(K.getMat());
+    Ptr<SFMLibmvReconstruction> uncalibrated_reconstruction = SFMLibmvUncalibratedReconstruction::create();
+    reconstruct_(images, Ka, uncalibrated_reconstruction);
+
+    // TODO: extract data
 
   }
 

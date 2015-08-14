@@ -37,6 +37,7 @@
 
 #if CERES_FOUND
 
+#include <opencv2/core/eigen.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/sfm/simple_pipeline.hpp>
 
@@ -87,7 +88,7 @@ typedef struct libmv_ProjectiveReconstruction : public libmv_ReconstructionBase
 
 typedef struct libmv_UncalibratedReconstruction : public libmv_ReconstructionBase
 {
-  libmv::EuclideanReconstruction euclidean_reconstruction;
+  libmv::EuclideanReconstruction reconstruction;
   libmv::ProjectiveReconstruction projective_reconstruction;
 
 } libmv_UncalibratedReconstruction;
@@ -206,7 +207,7 @@ libmv_solveReconstruction( const libmv::Tracks &tracks,
   libmv_reconstruction.tracks = uncalibrated_reconstructor.calibrated_tracks();
   libmv_reconstruction.intrinsics = uncalibrated_reconstructor.camera_intrinsics();
 
-  libmv_reconstruction.euclidean_reconstruction = uncalibrated_reconstructor.euclidean_reconstruction();
+  libmv_reconstruction.reconstruction = uncalibrated_reconstructor.euclidean_reconstruction();
   libmv_reconstruction.projective_reconstruction = uncalibrated_reconstructor.projective_reconstruction();
 
   libmv_reconstruction.error =
@@ -339,6 +340,47 @@ public:
 
   virtual double getError() { return libmv_reconstruction_.error; }
 
+  virtual Mat getPoints()
+  {
+    const size_t n_points =
+      libmv_reconstruction_.reconstruction.AllPoints().size();
+
+    Mat points3d(3, n_points, CV_64F);
+
+    for ( size_t i = 0; i < n_points; ++i )
+      for ( int j = 0; j < 3; ++j )
+        points3d.at<double>(j, i) =
+          libmv_reconstruction_.reconstruction.AllPoints()[i].X[j];
+
+    return points3d;
+  }
+
+  virtual cv::Mat getIntrinsics()
+  {
+    Mat K;
+    eigen2cv(libmv_reconstruction_.intrinsics.K(), K);
+    return K;
+  }
+
+  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras()
+  {
+    const size_t n_views =
+      libmv_reconstruction_.reconstruction.AllCameras().size();
+
+    Matx33d R;
+    Vec3d t;
+    std::vector<std::pair<Matx33d,Vec3d> > cameras;
+
+    for(size_t i = 0; i < n_views; ++i)
+    {
+      eigen2cv(libmv_reconstruction_.reconstruction.AllCameras()[i].R, R);
+      eigen2cv(libmv_reconstruction_.reconstruction.AllCameras()[i].t, t);
+      cameras.push_back(std::make_pair(R,t));
+    }
+    return cameras;
+  }
+
+
 };
 
 
@@ -347,10 +389,10 @@ Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
   return makePtr<SFMLibmvReconstructionImpl<libmv_EuclideanReconstruction,SFMLibmvEuclideanReconstruction> >();
 }
 
-Ptr<SFMLibmvProjectiveReconstruction> SFMLibmvProjectiveReconstruction::create()
-{
-  return makePtr<SFMLibmvReconstructionImpl<libmv_ProjectiveReconstruction,SFMLibmvProjectiveReconstruction> >();
-}
+//Ptr<SFMLibmvProjectiveReconstruction> SFMLibmvProjectiveReconstruction::create()
+//{
+//  return makePtr<SFMLibmvReconstructionImpl<libmv_ProjectiveReconstruction,SFMLibmvProjectiveReconstruction> >();
+//}
 
 Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::create()
 {
