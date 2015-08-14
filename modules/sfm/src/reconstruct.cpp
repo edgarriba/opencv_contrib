@@ -230,8 +230,20 @@ namespace cv
     std::vector<Mat> Rs, Ts;
     reconstruct(images, Rs, Ts, Ka, points3d, false);
 
-    // TODO: from Rs and Ts, extract Ps
+    // From Rs and Ts, extract Ps
 
+    const int nviews = Rs.size();
+    const int depth = Mat(Ka).depth();
+    projection_matrices.create(nviews, 1, depth);
+
+    Matx34d P;
+    for (size_t i = 0; i < nviews; ++i)
+    {
+      P_From_KRt(Ka, Rs[i], Vec3d(Ts[i]), P);
+      Mat(P).copyTo(projection_matrices.getMatRef(i));
+    }
+
+    Mat(Ka).copyTo(K.getMat());
   }
 
 
