@@ -311,72 +311,11 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
                              libmv_reconstruction, refine_intrinsics );
 }
 
-
-class SFMLibmvEuclideanReconstructionImpl : public SFMLibmvEuclideanReconstruction
+template <class T, class P>
+class SFMLibmvReconstructionImpl : public P
 {
 private:
-  libmv_EuclideanReconstruction libmv_reconstruction_;
-
-public:
-  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
-           double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
-  {
-
-    // Parse 2d points to Tracks
-    libmv::Tracks tracks;
-    parser_2D_tracks(points2d, tracks);
-
-    // Perform reconstruction
-    libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                              libmv_reconstruction_, refine_intrinsics);
-  }
-
-  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
-  {
-    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                                  libmv_reconstruction_, refine_intrinsics);
-  }
-
-  virtual double getError() { return libmv_reconstruction_.error; }
-
-};
-
-
-class SFMLibmvProjectiveReconstructionImpl : public SFMLibmvProjectiveReconstruction
-{
-private:
-  libmv_ProjectiveReconstruction libmv_reconstruction_;
-
-public:
-  virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
-  {
-    // Parse 2d points to Tracks
-    libmv::Tracks tracks;
-    parser_2D_tracks(points2d, tracks);
-
-    // Perform reconstruction
-    libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                              libmv_reconstruction_, refine_intrinsics);
-  }
-
-  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
-  {
-    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                                  libmv_reconstruction_, refine_intrinsics);
-  }
-
-  virtual double getError() { return libmv_reconstruction_.error; }
-
-};
-
-
-class SFMLibmvUncalibratedReconstructionImpl : public SFMLibmvUncalibratedReconstruction
-{
-private:
-  libmv_UncalibratedReconstruction  libmv_reconstruction_;
+  T libmv_reconstruction_;
 
 public:
   virtual void run(const std::vector < Mat_<double> > &points2d, int keyframe1, int keyframe2, double focal_length,
@@ -401,22 +340,21 @@ public:
   virtual double getError() { return libmv_reconstruction_.error; }
 
 };
-
 
 
 Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
 {
-  return makePtr<SFMLibmvEuclideanReconstructionImpl>();
+  return makePtr<SFMLibmvReconstructionImpl<libmv_EuclideanReconstruction,SFMLibmvEuclideanReconstruction> >();
 }
 
 Ptr<SFMLibmvProjectiveReconstruction> SFMLibmvProjectiveReconstruction::create()
 {
-  return makePtr<SFMLibmvProjectiveReconstructionImpl>();
+  return makePtr<SFMLibmvReconstructionImpl<libmv_ProjectiveReconstruction,SFMLibmvProjectiveReconstruction> >();
 }
 
 Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::create()
 {
-  return makePtr<SFMLibmvUncalibratedReconstructionImpl>();
+  return makePtr<SFMLibmvReconstructionImpl<libmv_UncalibratedReconstruction,SFMLibmvUncalibratedReconstruction> >();
 }
 
 } /* namespace cv */
