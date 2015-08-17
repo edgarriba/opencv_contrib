@@ -43,11 +43,10 @@ namespace cv
 namespace sfm
 {
 
-enum { SFM_BUNDLE_FOCAL_LENGTH    = 1,  // libmv::BUNDLE_FOCAL_LENGTH
-       SFM_BUNDLE_PRINCIPAL_POINT = 2,  // libmv::BUNDLE_PRINCIPAL_POINT
-       SFM_BUNDLE_RADIAL_K1       = 4,  // libmv::BUNDLE_RADIAL_K1
-       SFM_BUNDLE_RADIAL_K2       = 8,  // libmv::BUNDLE_RADIAL_K2
-       SFM_BUNDLE_TANGENTIAL      = 48, // libmv::BUNDLE_TANGENTIAL
+enum { SFM_REFINE_FOCAL_LENGTH         = 1,  // libmv::BUNDLE_FOCAL_LENGTH
+       SFM_REFINE_PRINCIPAL_POINT      = 2,  // libmv::BUNDLE_PRINCIPAL_POINT
+       SFM_REFINE_RADIAL_DISTORTION_K1 = 4,  // libmv::BUNDLE_RADIAL_K1
+       SFM_REFINE_RADIAL_DISTORTION_K2 = 8,  // libmv::BUNDLE_RADIAL_K2
 };
 
 
@@ -85,44 +84,6 @@ public:
 
   /** @brief Creates an instance of the SFMLibmvEuclideanReconstruction class. Initializes Libmv. */
   static Ptr<SFMLibmvEuclideanReconstruction> create();
-};
-
-
-//class CV_EXPORTS SFMLibmvProjectiveReconstruction : public SFMLibmvReconstruction
-//{
-//public:
-//  virtual void run(const std::vector<cv::Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
-//                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-//
-//  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-//                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-//
-//  virtual double getError() = 0;
-//  virtual cv::Mat getPoints() = 0;
-//  virtual cv::Mat getIntrinsics() = 0;4
-//  virtual std::vector<cv::Mat> getCameras() = 0;
-//
-//  /** @brief Creates an instance of the SFMLibmvProjectiveReconstruction class. Initializes Libmv. */
-//  static Ptr<SFMLibmvProjectiveReconstruction> create();
-//};
-
-
-class CV_EXPORTS SFMLibmvUncalibratedReconstruction : public SFMLibmvReconstruction
-{
-public:
-  virtual void run(const std::vector<cv::Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-
-  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0) = 0;
-
-  virtual double getError() = 0;
-  virtual cv::Mat getPoints() = 0;
-  virtual cv::Mat getIntrinsics() = 0;
-  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
-
-  /** @brief Creates an instance of the SFMLibmvUncalibratedReconstruction class. Initializes Libmv. */
-  static Ptr<SFMLibmvUncalibratedReconstruction> create();
 };
 
 } /* namespace cv */

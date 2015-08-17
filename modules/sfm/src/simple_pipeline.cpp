@@ -50,170 +50,324 @@
 #include "libmv/simple_pipeline/camera_intrinsics.h"
 #include "libmv/simple_pipeline/bundle.h"
 #include "libmv/simple_pipeline/initialize_reconstruction.h"
-#include "libmv/simple_pipeline/uncalibrated_reconstructor.h"
+#include "libmv/simple_pipeline/reconstruction_scale.h"
+//#include "libmv/simple_pipeline/uncalibrated_reconstructor.h"
 #include "libmv/simple_pipeline/tracks.h"
 
 using namespace cv;
 using namespace std;
+using namespace libmv;
 
 namespace cv
 {
 namespace sfm
 {
 
-typedef struct libmv_ReconstructionBase
-{
-  /* used for per-track average error calculation after reconstruction */
-  libmv::Tracks tracks;
-  libmv::CameraIntrinsics intrinsics;
+enum {
+  LIBMV_DISTORTION_MODEL_POLYNOMIAL = 0,
+  LIBMV_DISTORTION_MODEL_DIVISION = 1,
+};
+
+typedef struct libmv_CameraIntrinsicsOptions {
+  // Common settings of all distortion models.
+  int distortion_model;
+  int image_width, image_height;
+  double focal_length;
+  double principal_point_x, principal_point_y;
+
+  // Radial distortion model.
+  double polynomial_k1, polynomial_k2, polynomial_k3;
+  double polynomial_p1, polynomial_p2;
+
+  // Division distortion model.
+  double division_k1, division_k2;
+} libmv_CameraIntrinsicsOptions;
+
+typedef struct libmv_ReconstructionOptions {
+  int select_keyframes;
+  int keyframe1, keyframe2;
+  int refine_intrinsics;
+} libmv_ReconstructionOptions;
+
+struct libmv_Reconstruction {
+  EuclideanReconstruction reconstruction;
+
+  /* Used for per-track average error calculation after reconstruction */
+  Tracks tracks;
+  CameraIntrinsics *intrinsics;
 
   double error;
-
-} libmv_Reconstruction;
-
-
-typedef struct libmv_EuclideanReconstruction : public libmv_ReconstructionBase
-{
-  libmv::EuclideanReconstruction reconstruction;
-
-} libmv_EuclideanReconstruction;
+  bool is_valid;
+};
 
 
-typedef struct libmv_ProjectiveReconstruction : public libmv_ReconstructionBase
-{
-  libmv::ProjectiveReconstruction reconstruction;
+// Based on the 'selectTwoKeyframesBasedOnGRICAndVariance()' function from 'libmv_capi' (blender API)
 
-} libmv_ProjectiveReconstruction;
+bool selectTwoKeyframesBasedOnGRICAndVariance(
+    Tracks& tracks,
+    Tracks& normalized_tracks,
+    CameraIntrinsics& camera_intrinsics,
+    int& keyframe1,
+    int& keyframe2) {
 
+  // TODO: implement me (check blender api)
 
-typedef struct libmv_UncalibratedReconstruction : public libmv_ReconstructionBase
-{
-  libmv::EuclideanReconstruction reconstruction;
-  libmv::ProjectiveReconstruction projective_reconstruction;
-
-} libmv_UncalibratedReconstruction;
-
-
-void
-libmv_solveReconstruction( const libmv::Tracks &tracks,
-                           int keyframe1, int keyframe2,
-                           double focal_length,
-                           double principal_x, double principal_y,
-                           double k1, double k2, double k3,
-                           libmv_EuclideanReconstruction &libmv_reconstruction,
-                           int refine_intrinsics )
-{
-  /* Invert the camera intrinsics. */
-  libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
-  libmv::EuclideanReconstruction *reconstruction = &libmv_reconstruction.reconstruction;
-  libmv::CameraIntrinsics *intrinsics = &libmv_reconstruction.intrinsics;
-
-  intrinsics->SetFocalLength(focal_length, focal_length);
-  intrinsics->SetPrincipalPoint(principal_x, principal_y);
-  intrinsics->SetRadialDistortion(k1, k2, k3);
-
-  cout << "\tNumber of markers: " << markers.size() << endl;
-  for (int i = 0; i < markers.size(); ++i)
-  {
-      intrinsics->InvertIntrinsics(markers[i].x,
-                                   markers[i].y,
-                                   &(markers[i].x),
-                                   &(markers[i].y));
-  }
-
-  libmv::Tracks normalized_tracks(markers);
-
-  cout << "\tframes to init from: " << keyframe1 << " " << keyframe2 << endl;
-  libmv::vector<libmv::Marker> keyframe_markers =
-      normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
-  cout << "\tNumber of markers for init: " << keyframe_markers.size() << endl;
-
-  libmv::EuclideanReconstructTwoFrames(keyframe_markers, reconstruction);
-  libmv::EuclideanBundle(normalized_tracks, reconstruction);
-  libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(), normalized_tracks, reconstruction);
-
-  if (refine_intrinsics)
-  {
-    libmv::EuclideanBundleCommonIntrinsics( tracks, refine_intrinsics, libmv::BUNDLE_NO_CONSTRAINTS, reconstruction, intrinsics);
-  }
-
-  libmv_reconstruction.tracks = tracks;
-  libmv_reconstruction.error = libmv::EuclideanReprojectionError(tracks, *reconstruction, *intrinsics);
-
+  return true;
 }
 
 
-void
-libmv_solveReconstruction( const libmv::Tracks &tracks,
-                           int keyframe1, int keyframe2,
-                           double focal_length,
-                           double principal_x, double principal_y,
-                           double k1, double k2, double k3,
-                           libmv_ProjectiveReconstruction &libmv_reconstruction,
-                           int refine_intrinsics )
-{
+// Based on the 'libmv_cameraIntrinsicsFillFromOptions()' function from 'libmv_capi' (blender API)
 
-  /* Invert the camera intrinsics. */
-  libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
-  libmv::ProjectiveReconstruction *reconstruction = &libmv_reconstruction.reconstruction;
-  libmv::CameraIntrinsics *intrinsics = &libmv_reconstruction.intrinsics;
+static void libmv_cameraIntrinsicsFillFromOptions(
+    const libmv_CameraIntrinsicsOptions* camera_intrinsics_options,
+    CameraIntrinsics* camera_intrinsics) {
+  camera_intrinsics->SetFocalLength(camera_intrinsics_options->focal_length,
+                                    camera_intrinsics_options->focal_length);
 
-  intrinsics->SetFocalLength(focal_length, focal_length);
-  intrinsics->SetPrincipalPoint(principal_x, principal_y);
-  intrinsics->SetRadialDistortion(k1, k2, k3);
+  camera_intrinsics->SetPrincipalPoint(
+      camera_intrinsics_options->principal_point_x,
+      camera_intrinsics_options->principal_point_y);
 
-  cout << "\tNumber of markers: " << markers.size() << endl;
-  for (int i = 0; i < markers.size(); ++i)
-  {
-      intrinsics->InvertIntrinsics(markers[i].x,
-                                   markers[i].y,
-                                   &(markers[i].x),
-                                   &(markers[i].y));
+  camera_intrinsics->SetImageSize(camera_intrinsics_options->image_width,
+      camera_intrinsics_options->image_height);
+
+  switch (camera_intrinsics_options->distortion_model) {
+    case LIBMV_DISTORTION_MODEL_POLYNOMIAL:
+      {
+        PolynomialCameraIntrinsics *polynomial_intrinsics =
+          static_cast<PolynomialCameraIntrinsics*>(camera_intrinsics);
+
+        polynomial_intrinsics->SetRadialDistortion(
+            camera_intrinsics_options->polynomial_k1,
+            camera_intrinsics_options->polynomial_k2,
+            camera_intrinsics_options->polynomial_k3);
+
+        break;
+      }
+
+    case LIBMV_DISTORTION_MODEL_DIVISION:
+      {
+        DivisionCameraIntrinsics *division_intrinsics =
+          static_cast<DivisionCameraIntrinsics*>(camera_intrinsics);
+
+        division_intrinsics->SetDistortion(
+            camera_intrinsics_options->division_k1,
+            camera_intrinsics_options->division_k2);
+        break;
+      }
+
+    default:
+      assert(!"Unknown distortion model");
   }
-
-  libmv::Tracks normalized_tracks(markers);
-
-  cout << "\tframes to init from: " << keyframe1 << " " << keyframe2 << endl;
-  libmv::vector<libmv::Marker> keyframe_markers =
-      normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
-  cout << "\tNumber of markers for init: " << keyframe_markers.size() << endl;
-
-  libmv::ProjectiveReconstructTwoFrames(keyframe_markers, reconstruction);
-  libmv::ProjectiveBundle(normalized_tracks, reconstruction);
-  libmv::ProjectiveCompleteReconstruction(libmv::ReconstructionOptions(), normalized_tracks, reconstruction);
-
-//  if (refine_intrinsics)
-//  {
-//    libmv::ProjectiveBundleCommonIntrinsics( tracks, refine_intrinsics, libmv::BUNDLE_NO_CONSTRAINTS, reconstruction, intrinsics);
-//  }
-
-  libmv_reconstruction.tracks = tracks;
-  libmv_reconstruction.error = libmv::ProjectiveReprojectionError(tracks, *reconstruction, *intrinsics);
-
 }
 
 
+// Based on the 'libmv_cameraIntrinsicsCreateFromOptions()' function from 'libmv_capi' (blender API)
+
+CameraIntrinsics* libmv_cameraIntrinsicsCreateFromOptions(
+    const libmv_CameraIntrinsicsOptions* camera_intrinsics_options) {
+  CameraIntrinsics *camera_intrinsics = NULL;
+  switch (camera_intrinsics_options->distortion_model) {
+    case LIBMV_DISTORTION_MODEL_POLYNOMIAL:
+      //camera_intrinsics = LIBMV_OBJECT_NEW(PolynomialCameraIntrinsics);
+      camera_intrinsics = new PolynomialCameraIntrinsics();
+      break;
+    case LIBMV_DISTORTION_MODEL_DIVISION:
+      //camera_intrinsics = LIBMV_OBJECT_NEW(DivisionCameraIntrinsics);
+      camera_intrinsics = new DivisionCameraIntrinsics();
+      break;
+    default:
+      assert(!"Unknown distortion model");
+  }
+  libmv_cameraIntrinsicsFillFromOptions(camera_intrinsics_options,
+                                        camera_intrinsics);
+  return camera_intrinsics;
+}
+
+
+// Based on the 'libmv_getNormalizedTracks()' function from 'libmv_capi' (blender API)
+
 void
-libmv_solveReconstruction( const libmv::Tracks &tracks,
-                           int keyframe1, int keyframe2,
-                           double focal_length,
-                           double principal_x, double principal_y,
-                           double k1, double k2, double k3,
-                           libmv_UncalibratedReconstruction &libmv_reconstruction,
-                           int refine_intrinsics )
+libmv_getNormalizedTracks(const libmv::Tracks &tracks,
+                          const libmv::CameraIntrinsics &camera_intrinsics,
+                          libmv::Tracks *normalized_tracks) {
+  libmv::vector<libmv::Marker> markers = tracks.AllMarkers();
+  for (int i = 0; i < markers.size(); ++i) {
+    libmv::Marker &marker = markers[i];
+    camera_intrinsics.InvertIntrinsics(marker.x, marker.y,
+                                       &marker.x, &marker.y);
+    normalized_tracks->Insert(marker.image,
+                              marker.track,
+                              marker.x, marker.y,
+                              marker.weight);
+  }
+}
+
+
+// Based on the 'libmv_solveRefineIntrinsics()' function from 'libmv_capi' (blender API)
+
+void libmv_solveRefineIntrinsics(
+    const Tracks &tracks,
+    const int refine_intrinsics,
+    const int bundle_constraints,
+    /*reconstruct_progress_update_cb progress_update_callback,
+    void* callback_customdata,*/
+    EuclideanReconstruction* reconstruction,
+    CameraIntrinsics* intrinsics) {
+  /* only a few combinations are supported but trust the caller/ */
+  int bundle_intrinsics = 0;
+
+  if (refine_intrinsics & SFM_REFINE_FOCAL_LENGTH) {
+    bundle_intrinsics |= libmv::BUNDLE_FOCAL_LENGTH;
+  }
+  if (refine_intrinsics & SFM_REFINE_PRINCIPAL_POINT) {
+    bundle_intrinsics |= libmv::BUNDLE_PRINCIPAL_POINT;
+  }
+  if (refine_intrinsics & SFM_REFINE_RADIAL_DISTORTION_K1) {
+    bundle_intrinsics |= libmv::BUNDLE_RADIAL_K1;
+  }
+  if (refine_intrinsics & SFM_REFINE_RADIAL_DISTORTION_K2) {
+    bundle_intrinsics |= libmv::BUNDLE_RADIAL_K2;
+  }
+
+  //progress_update_callback(callback_customdata, 1.0, "Refining solution");
+
+  EuclideanBundleCommonIntrinsics(tracks,
+                                  bundle_intrinsics,
+                                  bundle_constraints,
+                                  reconstruction,
+                                  intrinsics);
+}
+
+
+// Based on the 'finishReconstruction()' function from 'libmv_capi' (blender API)
+
+void finishReconstruction(
+    const Tracks &tracks,
+    const CameraIntrinsics &camera_intrinsics,
+    libmv_Reconstruction *libmv_reconstruction/*,
+    reconstruct_progress_update_cb progress_update_callback,
+    void *callback_customdata*/) {
+  EuclideanReconstruction &reconstruction =
+    libmv_reconstruction->reconstruction;
+
+  /* Reprojection error calculation. */
+  //progress_update_callback(callback_customdata, 1.0, "Finishing solution");
+  libmv_reconstruction->tracks = tracks;
+  libmv_reconstruction->error = EuclideanReprojectionError(tracks,
+                                                           reconstruction,
+                                                           camera_intrinsics);
+}
+
+
+// Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
+
+libmv_Reconstruction *libmv_solveReconstruction(
+    const Tracks &libmv_tracks,
+    const libmv_CameraIntrinsicsOptions* libmv_camera_intrinsics_options,
+    libmv_ReconstructionOptions* libmv_reconstruction_options,
+    libmv_Reconstruction *libmv_reconstruction)
 {
-  UncalibratedReconstructor uncalibrated_reconstructor( principal_x, principal_y, keyframe1, keyframe2, tracks);
 
-  libmv_reconstruction.tracks = uncalibrated_reconstructor.calibrated_tracks();
-  libmv_reconstruction.intrinsics = uncalibrated_reconstructor.camera_intrinsics();
+  Tracks tracks = libmv_tracks;
+  EuclideanReconstruction &reconstruction =
+    libmv_reconstruction->reconstruction;
 
-  libmv_reconstruction.reconstruction = uncalibrated_reconstructor.euclidean_reconstruction();
-  libmv_reconstruction.projective_reconstruction = uncalibrated_reconstructor.projective_reconstruction();
+//  ReconstructUpdateCallback update_callback =
+//    ReconstructUpdateCallback(progress_update_callback,
+//                              callback_customdata);
 
-  libmv_reconstruction.error =
-    ProjectiveReprojectionError( libmv_reconstruction.tracks,
-                                 libmv_reconstruction.projective_reconstruction,
-                                 libmv_reconstruction.intrinsics );
+  /* Retrieve reconstruction options from C-API to libmv API. */
+  CameraIntrinsics *camera_intrinsics;
+  camera_intrinsics = libmv_reconstruction->intrinsics =
+    libmv_cameraIntrinsicsCreateFromOptions(libmv_camera_intrinsics_options);
+
+  /* Invert the camera intrinsics/ */
+  Tracks normalized_tracks;
+  libmv_getNormalizedTracks(tracks, *camera_intrinsics, &normalized_tracks);
+
+  /* keyframe selection. */
+  int keyframe1 = libmv_reconstruction_options->keyframe1,
+      keyframe2 = libmv_reconstruction_options->keyframe2;
+
+  if (libmv_reconstruction_options->select_keyframes) {
+    LG << "Using automatic keyframe selection";
+
+    //update_callback.invoke(0, "Selecting keyframes");
+
+    selectTwoKeyframesBasedOnGRICAndVariance(tracks,
+                                             normalized_tracks,
+                                             *camera_intrinsics,
+                                             keyframe1,
+                                             keyframe2);
+
+    /* so keyframes in the interface would be updated */
+    libmv_reconstruction_options->keyframe1 = keyframe1;
+    libmv_reconstruction_options->keyframe2 = keyframe2;
+  }
+
+  /* Actual reconstruction. */
+  LG << "frames to init from: " << keyframe1 << " " << keyframe2;
+
+  libmv::vector<Marker> keyframe_markers =
+    normalized_tracks.MarkersForTracksInBothImages(keyframe1, keyframe2);
+
+  LG << "number of markers for init: " << keyframe_markers.size();
+
+  if (keyframe_markers.size() < 8) {
+    LG << "No enough markers to initialize from";
+    libmv_reconstruction->is_valid = false;
+    return libmv_reconstruction;
+  }
+
+  //update_callback.invoke(0, "Initial reconstruction");
+
+  //libmv::EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
+  //libmv::EuclideanBundle(normalized_tracks, &reconstruction);
+  //libmv::EuclideanCompleteReconstruction(normalized_tracks,
+  //                                       &reconstruction,
+  //                                       &update_callback);
+
+  libmv::EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
+  libmv::EuclideanBundle(normalized_tracks, &reconstruction);
+  libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(),
+                                         normalized_tracks,
+                                         &reconstruction);
+
+  /* Refinement/ */
+  if (libmv_reconstruction_options->refine_intrinsics) {
+//    libmv_solveRefineIntrinsics(
+//                                tracks,
+//                                libmv_reconstruction_options->refine_intrinsics,
+//                                libmv::BUNDLE_NO_CONSTRAINTS,
+//                                progress_update_callback,
+//                                callback_customdata,
+//                                &reconstruction,
+//                                camera_intrinsics);
+
+    libmv_solveRefineIntrinsics(
+                                tracks,
+                                libmv_reconstruction_options->refine_intrinsics,
+                                libmv::BUNDLE_NO_CONSTRAINTS,
+                                &reconstruction,
+                                camera_intrinsics);
+  }
+
+  /* Set reconstruction scale to unity. */
+  EuclideanScaleToUnity(&reconstruction);
+
+  /* Finish reconstruction. */
+//  finishReconstruction(tracks,
+//                       *camera_intrinsics,
+//                       libmv_reconstruction,
+//                       progress_update_callback,
+//                       callback_customdata);
+  finishReconstruction(tracks,
+                       *camera_intrinsics,
+                       libmv_reconstruction);
+
+  libmv_reconstruction->is_valid = true;
+  return (libmv_Reconstruction *) libmv_reconstruction;
 }
 
 
@@ -312,30 +466,51 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
                              libmv_reconstruction, refine_intrinsics );
 }
 
-template <class T, class P>
-class SFMLibmvReconstructionImpl : public P
+template <class T>
+class SFMLibmvReconstructionImpl : public T
 {
-private:
-  T libmv_reconstruction_;
-
 public:
+
   virtual void run(const std::vector<Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
     // Parse 2d points to Tracks
-    libmv::Tracks tracks;
+    Tracks tracks;
     parser_2D_tracks(points2d, tracks);
 
+    // Initialize camera options
+    libmv_camera_intrinsics_options_.distortion_model = LIBMV_DISTORTION_MODEL_POLYNOMIAL;
+    libmv_camera_intrinsics_options_.image_width = 2*principal_x;
+    libmv_camera_intrinsics_options_.image_height = 2*principal_y;
+    libmv_camera_intrinsics_options_.focal_length = focal_length;
+    libmv_camera_intrinsics_options_.principal_point_x = principal_x;
+    libmv_camera_intrinsics_options_.principal_point_y = principal_y;
+    libmv_camera_intrinsics_options_.polynomial_k1 = k1;
+    libmv_camera_intrinsics_options_.polynomial_k2 = k2;
+    libmv_camera_intrinsics_options_.polynomial_k3 = k3;
+
+    // Initialize reconstruction options
+    libmv_reconstruction_options_.select_keyframes = 0;
+    libmv_reconstruction_options_.keyframe1 = keyframe1;
+    libmv_reconstruction_options_.keyframe2 = keyframe2;
+    libmv_reconstruction_options_.refine_intrinsics = 1;
+
     // Perform reconstruction
-    libmv_solveReconstruction(tracks, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                              libmv_reconstruction_, refine_intrinsics);
+    libmv_Reconstruction *libmv_reconstruction =
+      libmv_solveReconstruction(tracks,
+                                &libmv_camera_intrinsics_options_,
+                                &libmv_reconstruction_options_,
+                                &libmv_reconstruction_);
+
+    if ( libmv_reconstruction->is_valid )
+      libmv_reconstruction_ = *libmv_reconstruction;
   }
 
   virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
                    double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
   {
-    libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-                                  libmv_reconstruction_, refine_intrinsics);
+    //libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
+    //                              libmv_reconstruction_, refine_intrinsics);
   }
 
   virtual double getError() { return libmv_reconstruction_.error; }
@@ -358,7 +533,7 @@ public:
   virtual cv::Mat getIntrinsics()
   {
     Mat K;
-    eigen2cv(libmv_reconstruction_.intrinsics.K(), K);
+    eigen2cv(libmv_reconstruction_.intrinsics->K(), K);
     return K;
   }
 
@@ -380,23 +555,16 @@ public:
     return cameras;
   }
 
-
+private:
+  libmv_Reconstruction libmv_reconstruction_;
+  libmv_ReconstructionOptions libmv_reconstruction_options_;
+  libmv_CameraIntrinsicsOptions libmv_camera_intrinsics_options_;
 };
 
 
 Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
 {
-  return makePtr<SFMLibmvReconstructionImpl<libmv_EuclideanReconstruction,SFMLibmvEuclideanReconstruction> >();
-}
-
-//Ptr<SFMLibmvProjectiveReconstruction> SFMLibmvProjectiveReconstruction::create()
-//{
-//  return makePtr<SFMLibmvReconstructionImpl<libmv_ProjectiveReconstruction,SFMLibmvProjectiveReconstruction> >();
-//}
-
-Ptr<SFMLibmvUncalibratedReconstruction> SFMLibmvUncalibratedReconstruction::create()
-{
-  return makePtr<SFMLibmvReconstructionImpl<libmv_UncalibratedReconstruction,SFMLibmvUncalibratedReconstruction> >();
+  return makePtr<SFMLibmvReconstructionImpl<SFMLibmvEuclideanReconstruction> >();
 }
 
 } /* namespace cv */

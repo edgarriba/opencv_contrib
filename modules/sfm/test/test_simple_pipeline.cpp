@@ -68,7 +68,7 @@ TEST(Sfm_simple_pipeline, backyard)
     double focal_length = 860.986572265625;  // f = 24mm (checked debugging blender)
     double principal_x = 400, principal_y = 225, k1 = -0.158, k2 = 0.131, k3 = 0;
 
-    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;  /* (see libmv::EuclideanBundleCommonIntrinsics) */                         libmv_reconstruction, refine_intrinsics );
+    int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
 
     euclidean_reconstruction->run(points2d, keyframe1, keyframe2, focal_length,
                                   principal_x, principal_y, k1, k2, k3, refine_intrinsics);

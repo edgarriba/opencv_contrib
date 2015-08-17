@@ -119,19 +119,6 @@ namespace cv
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
               InputOutputArray K, OutputArray points3d, bool is_projective = false);
 
-  /** @brief Reconstruct 3d points from 2d correspondences while performing autocalibration.
-   * @param images a vector of string with the images paths
-   * @param Rs The 3 x 3 rotations of the camera
-   * @param Ts The 3 x 1 translations of the camera
-   * @param points3d the 3d points
-   * @param K The intrinsic parameters of the camera
-   * @param method used to call the uncalibrated pipeline (hacked by now)
-   */
-  CV_EXPORTS
-  void
-  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
-              OutputArray K, OutputArray points3d, int method = 0);
-
   #endif /* CV_DOXYGEN || CERES_FOUND */
 
   /** @brief Computes the fundamental matrix from corresponding points in two views

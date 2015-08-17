@@ -76,7 +76,7 @@ namespace cv
     const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
 
     // Refinement parameters
-    int refine_intrinsics = SFM_BUNDLE_FOCAL_LENGTH | SFM_BUNDLE_PRINCIPAL_POINT | SFM_BUNDLE_RADIAL_K1 | SFM_BUNDLE_RADIAL_K2; // | SFM_BUNDLE_TANGENTIAL;
+    int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
 
     // Run reconstruction pipeline
     reconstruction->run(input, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3, refine_intrinsics);
@@ -283,30 +283,6 @@ namespace cv
 
       // TODO: extract data
     }
-
-  }
-
-  //TODO: ONLY CALLS UNCALIBRATED PIPELINE. DECIDE TO INCLUDE OR NOT
-  void
-  reconstruct(const std::vector<string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
-              OutputArray K, OutputArray points3d, int method)
-  {
-    int width = 0, height = 0;
-
-    if ( images.size() > 1 )
-    {
-      Size sz = imread(images[0], 0).size();
-      width = sz.width, height = sz.height;
-    }
-
-    Matx33d Ka = Matx33d( 0, 0, height,
-                          0, 0, width,
-                          0, 0,      1);
-
-    Ptr<SFMLibmvReconstruction> uncalibrated_reconstruction = SFMLibmvUncalibratedReconstruction::create();
-    reconstruct_(images, Ka, uncalibrated_reconstruction);
-
-    // TODO: extract data
 
   }
 
