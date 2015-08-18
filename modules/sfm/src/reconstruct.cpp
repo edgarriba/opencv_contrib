@@ -58,7 +58,7 @@ namespace cv
   {
     // Initial reconstruction
     const int keyframe1 = 1, keyframe2 = 2;
-    const int select_keyframes = 0; // automatic keyframes selection
+    const int select_keyframes = 1; // enable automatic keyframes selection
 
     // Refinement parameters
     const int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
@@ -191,11 +191,13 @@ namespace cv
       Ka = K.getMat();
       CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
 
-      Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+      Ptr<SFMLibmvReconstruction> euclidean_reconstruction =
+        SFMLibmvEuclideanReconstruction::create();
       reconstruct_(pts2d, Ka, euclidean_reconstruction);
 
       // Extract estimated camera poses
-      std::vector<std::pair<Matx33d,Vec3d> > cameras = euclidean_reconstruction->getCameras();
+      std::vector<std::pair<Matx33d,Vec3d> > cameras =
+        euclidean_reconstruction->getCameras();
 
       const int nviews_est = cameras.size();
       Rs.create(nviews_est, 1, depth);
@@ -277,10 +279,32 @@ namespace cv
     else
     {
 
-      Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
+      Ptr<SFMLibmvReconstruction> euclidean_reconstruction =
+        SFMLibmvEuclideanReconstruction::create();
       reconstruct_(images, Ka, euclidean_reconstruction);
 
-      // TODO: extract data
+      // Extract estimated camera poses
+      std::vector<std::pair<Matx33d,Vec3d> > cameras =
+        euclidean_reconstruction->getCameras();
+
+      const int nviews_est = cameras.size();
+      const int depth = Mat(Ka).depth();
+      Rs.create(nviews_est, 1, depth);
+      Ts.create(nviews_est, 1, depth);
+
+      for (size_t i = 0; i < nviews_est; ++i)
+      {
+        Mat(cameras[i].first).copyTo(Rs.getMatRef(i));
+        Mat(cameras[i].second).copyTo(Ts.getMatRef(i));
+      }
+
+      // Extract reconstructed points
+      Mat points3d_ = euclidean_reconstruction->getPoints();
+      points3d.create(3, points3d_.cols, CV_64F);
+      points3d_.copyTo(points3d);
+
+      // Extract refined intrinsic parameters
+      euclidean_reconstruction->getIntrinsics().copyTo(K.getMat());
     }
 
   }

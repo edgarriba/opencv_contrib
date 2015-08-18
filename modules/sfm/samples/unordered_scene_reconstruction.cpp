@@ -24,8 +24,7 @@ static void help() {
       << " where: path_to_images_dir is the images directory absolute path into your system. \n"
       << "        The directory must only contain images with the same size and taken with \n"
       << "        the same camera. \n"
-      << "        fx is the focal lenght x component in pixels. \n"
-      << "        fy is the focal lenght y component in pixels. \n"
+      << "        f is the focal lenght in pixels. \n"
       << "        cx is the image principal point x coordinates in pixels. \n"
       << "        cy is the image principal point y coordinates in pixels. \n"
       << "------------------------------------------------------------------------------------\n\n"
@@ -36,24 +35,15 @@ int getdir (string dir, std::vector<string> &files);
 
 int main(int argc, char* argv[])
 {
-  // read input parameters
-  if ( argc > 1 && argc == 6 )
-  {
-    if ( string(argv[1]).compare("-h") == 0 ||
-         string(argv[1]).compare("--help") == 0 )
-    {
-      help();
-      exit(0);
-    }
-  }
-  else
+  // Read input parameters
+
+  if ( argc != 5 )
   {
     help();
     exit(0);
   }
 
-
-  /// Reconstruct the scene using the 2d images
+  // Parse the image paths
 
   std::vector<std::string> images_paths;
   getdir( argv[1], images_paths );
@@ -63,12 +53,15 @@ int main(int argc, char* argv[])
   // cx = w/2
   // cy = h/2
 
-  float fx = atof(argv[2]), fy = atof(argv[3]),
-        cx = atof(argv[4]), cy = atof(argv[5]);
+  float f  = atof(argv[2]),
+        cx = atof(argv[3]), cy = atof(argv[4]);
 
-  Matx33d K = Matx33d( fx,  0, cx,
-                        0, fy, cy,
-                        0,  0,  1);
+  Matx33d K = Matx33d( f, 0, cx,
+                       0, f, cy,
+                       0, 0,  1);
+
+
+  /// Reconstruct the scene using the 2d images
 
   bool is_projective = false;
   std::vector<cv::Mat> Rs_est, ts_est;

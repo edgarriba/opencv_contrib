@@ -67,7 +67,7 @@ TEST(Sfm_simple_pipeline, backyard)
     double principal_x = 400, principal_y = 225, k1 = -0.158, k2 = 0.131, k3 = 0;
 
     int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
-    int select_keyframes = 0; // automatic keyframes selection
+    int select_keyframes = 0; // disable automatic keyframes selection
 
     libmv_CameraIntrinsicsOptions camera_instrinsic_options =
       libmv_CameraIntrinsicsOptions(LIBMV_DISTORTION_MODEL_POLYNOMIAL,
