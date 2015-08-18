@@ -41,22 +41,10 @@
 #include <Eigen/Core>
 
 // OpenCV
-#include <opencv2/core/eigen.hpp>
 #include <opencv2/sfm.hpp>
-#include <opencv2/sfm/projection.hpp>
-#include <opencv2/calib3d.hpp>
-#include <opencv2/features2d.hpp>
-#include <opencv2/highgui.hpp>
-
-// libmv headers
-#include "libmv/correspondence/feature_matching.h"
-#include "libmv/correspondence/nRobustViewMatching.h"
-#include "libmv/reconstruction/reconstruction.h"
-#include "libmv/reconstruction/projective_reconstruction.h"
 
 using namespace cv;
 using namespace cv::sfm;
-using namespace libmv;
 using namespace std;
 
 // Temp debug macro
@@ -70,16 +58,27 @@ namespace cv
   {
     // Initial reconstruction
     const int keyframe1 = 1, keyframe2 = 2;
+    const int select_keyframes = 0; // automatic keyframes selection
+
+    // Refinement parameters
+    const int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
 
     // Camera data
     const double focal_length = Ka(0,0);
     const double principal_x = Ka(0,2), principal_y = Ka(1,2), k1 = 0, k2 = 0, k3 = 0;
 
-    // Refinement parameters
-    int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
+    // Set reconstruction options
+    libmv_ReconstructionOptions reconstruction_options(keyframe1, keyframe2, refine_intrinsics, select_keyframes);
+
+    libmv_CameraIntrinsicsOptions camera_instrinsic_options =
+          libmv_CameraIntrinsicsOptions(LIBMV_DISTORTION_MODEL_POLYNOMIAL,
+                                        focal_length, principal_x, principal_y,
+                                        k1, k2, k3);
+    reconstruction->setReconstructionOptions(reconstruction_options);
+    reconstruction->setCameraIntrinsicOptions(camera_instrinsic_options);
 
     // Run reconstruction pipeline
-    reconstruction->run(input, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3, refine_intrinsics);
+    reconstruction->run(input);
   }
 
 

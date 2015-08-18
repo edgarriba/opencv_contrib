@@ -52,8 +52,6 @@ TEST(Sfm_simple_pipeline, backyard)
 {
     //V3D::optimizerVerbosenessLevel = 0; // less logging messages
 
-    Ptr<SFMLibmvReconstruction> euclidean_reconstruction = SFMLibmvEuclideanReconstruction::create();
-
     string trackFilename =
       string(TS::ptr()->get_data_path()) + SFM_DIR + "/" + TRACK_FILENAME;
 
@@ -69,9 +67,19 @@ TEST(Sfm_simple_pipeline, backyard)
     double principal_x = 400, principal_y = 225, k1 = -0.158, k2 = 0.131, k3 = 0;
 
     int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
+    int select_keyframes = 0; // automatic keyframes selection
 
-    euclidean_reconstruction->run(points2d, keyframe1, keyframe2, focal_length,
-                                  principal_x, principal_y, k1, k2, k3, refine_intrinsics);
+    libmv_CameraIntrinsicsOptions camera_instrinsic_options =
+      libmv_CameraIntrinsicsOptions(LIBMV_DISTORTION_MODEL_POLYNOMIAL,
+                                    focal_length, principal_x, principal_y,
+                                    k1, k2, k3);
+    libmv_ReconstructionOptions reconstruction_options(keyframe1, keyframe2, refine_intrinsics, select_keyframes);
+
+    Ptr<SFMLibmvReconstruction> euclidean_reconstruction =
+        SFMLibmvEuclideanReconstruction::create(camera_instrinsic_options, reconstruction_options);
+
+    // Run reconstruction pipeline
+    euclidean_reconstruction->run(points2d);
 
     double error = euclidean_reconstruction->getError();
     cout << "euclidean_reconstruction error = " << error << endl;

@@ -63,32 +63,6 @@ namespace cv
 namespace sfm
 {
 
-enum {
-  LIBMV_DISTORTION_MODEL_POLYNOMIAL = 0,
-  LIBMV_DISTORTION_MODEL_DIVISION = 1,
-};
-
-typedef struct libmv_CameraIntrinsicsOptions {
-  // Common settings of all distortion models.
-  int distortion_model;
-  int image_width, image_height;
-  double focal_length;
-  double principal_point_x, principal_point_y;
-
-  // Radial distortion model.
-  double polynomial_k1, polynomial_k2, polynomial_k3;
-  double polynomial_p1, polynomial_p2;
-
-  // Division distortion model.
-  double division_k1, division_k2;
-} libmv_CameraIntrinsicsOptions;
-
-typedef struct libmv_ReconstructionOptions {
-  int select_keyframes;
-  int keyframe1, keyframe2;
-  int refine_intrinsics;
-} libmv_ReconstructionOptions;
-
 struct libmv_Reconstruction {
   EuclideanReconstruction reconstruction;
 
@@ -148,12 +122,9 @@ bool selectTwoKeyframesBasedOnGRICAndVariance(
     /* get a solution from two keyframes only */
     EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
     EuclideanBundle(keyframe_tracks, &reconstruction);
-    //EuclideanCompleteReconstruction(keyframe_tracks,
-    //                                &reconstruction,
-    //                                NULL);
-    libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(),
-                                         keyframe_tracks,
-                                         &reconstruction);
+    EuclideanCompleteReconstruction(ReconstructionOptions(),
+                                    keyframe_tracks,
+                                    &reconstruction);
 
     double current_error = EuclideanReprojectionError(tracks,
                                                       reconstruction,
@@ -229,11 +200,9 @@ CameraIntrinsics* libmv_cameraIntrinsicsCreateFromOptions(
   CameraIntrinsics *camera_intrinsics = NULL;
   switch (camera_intrinsics_options->distortion_model) {
     case LIBMV_DISTORTION_MODEL_POLYNOMIAL:
-      //camera_intrinsics = LIBMV_OBJECT_NEW(PolynomialCameraIntrinsics);
       camera_intrinsics = new PolynomialCameraIntrinsics();
       break;
     case LIBMV_DISTORTION_MODEL_DIVISION:
-      //camera_intrinsics = LIBMV_OBJECT_NEW(DivisionCameraIntrinsics);
       camera_intrinsics = new DivisionCameraIntrinsics();
       break;
     default:
@@ -270,8 +239,6 @@ void libmv_solveRefineIntrinsics(
     const Tracks &tracks,
     const int refine_intrinsics,
     const int bundle_constraints,
-    /*reconstruct_progress_update_cb progress_update_callback,
-    void* callback_customdata,*/
     EuclideanReconstruction* reconstruction,
     CameraIntrinsics* intrinsics) {
   /* only a few combinations are supported but trust the caller/ */
@@ -290,8 +257,6 @@ void libmv_solveRefineIntrinsics(
     bundle_intrinsics |= libmv::BUNDLE_RADIAL_K2;
   }
 
-  //progress_update_callback(callback_customdata, 1.0, "Refining solution");
-
   EuclideanBundleCommonIntrinsics(tracks,
                                   bundle_intrinsics,
                                   bundle_constraints,
@@ -305,14 +270,11 @@ void libmv_solveRefineIntrinsics(
 void finishReconstruction(
     const Tracks &tracks,
     const CameraIntrinsics &camera_intrinsics,
-    libmv_Reconstruction *libmv_reconstruction/*,
-    reconstruct_progress_update_cb progress_update_callback,
-    void *callback_customdata*/) {
+    libmv_Reconstruction *libmv_reconstruction) {
   EuclideanReconstruction &reconstruction =
     libmv_reconstruction->reconstruction;
 
   /* Reprojection error calculation. */
-  //progress_update_callback(callback_customdata, 1.0, "Finishing solution");
   libmv_reconstruction->tracks = tracks;
   libmv_reconstruction->error = EuclideanReprojectionError(tracks,
                                                            reconstruction,
@@ -333,10 +295,6 @@ libmv_Reconstruction *libmv_solveReconstruction(
   EuclideanReconstruction &reconstruction =
     libmv_reconstruction->reconstruction;
 
-//  ReconstructUpdateCallback update_callback =
-//    ReconstructUpdateCallback(progress_update_callback,
-//                              callback_customdata);
-
   /* Retrieve reconstruction options from C-API to libmv API. */
   CameraIntrinsics *camera_intrinsics;
   camera_intrinsics = libmv_reconstruction->intrinsics =
@@ -352,8 +310,6 @@ libmv_Reconstruction *libmv_solveReconstruction(
 
   if (libmv_reconstruction_options->select_keyframes) {
     LG << "Using automatic keyframe selection";
-
-    //update_callback.invoke(0, "Selecting keyframes");
 
     selectTwoKeyframesBasedOnGRICAndVariance(tracks,
                                              normalized_tracks,
@@ -380,14 +336,6 @@ libmv_Reconstruction *libmv_solveReconstruction(
     return libmv_reconstruction;
   }
 
-  //update_callback.invoke(0, "Initial reconstruction");
-
-  //libmv::EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
-  //libmv::EuclideanBundle(normalized_tracks, &reconstruction);
-  //libmv::EuclideanCompleteReconstruction(normalized_tracks,
-  //                                       &reconstruction,
-  //                                       &update_callback);
-
   libmv::EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
   libmv::EuclideanBundle(normalized_tracks, &reconstruction);
   libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(),
@@ -396,15 +344,6 @@ libmv_Reconstruction *libmv_solveReconstruction(
 
   /* Refinement/ */
   if (libmv_reconstruction_options->refine_intrinsics) {
-//    libmv_solveRefineIntrinsics(
-//                                tracks,
-//                                libmv_reconstruction_options->refine_intrinsics,
-//                                libmv::BUNDLE_NO_CONSTRAINTS,
-//                                progress_update_callback,
-//                                callback_customdata,
-//                                &reconstruction,
-//                                camera_intrinsics);
-
     libmv_solveRefineIntrinsics(
                                 tracks,
                                 libmv_reconstruction_options->refine_intrinsics,
@@ -416,12 +355,6 @@ libmv_Reconstruction *libmv_solveReconstruction(
   /* Set reconstruction scale to unity. */
   EuclideanScaleToUnity(&reconstruction);
 
-  /* Finish reconstruction. */
-//  finishReconstruction(tracks,
-//                       *camera_intrinsics,
-//                       libmv_reconstruction,
-//                       progress_update_callback,
-//                       callback_customdata);
   finishReconstruction(tracks,
                        *camera_intrinsics,
                        libmv_reconstruction);
@@ -495,15 +428,11 @@ parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
 }
 
 
-template <class T>
 void
-libmv_solveReconstructionImpl( const std::vector<std::string> &images,
-                               int keyframe1, int keyframe2,
-                               double focal_length,
-                               double principal_x, double principal_y,
-                               double k1, double k2, double k3,
-                               T &libmv_reconstruction,
-                               int refine_intrinsics)
+libmv_solveReconstructionImpl(const std::vector<std::string> &images,
+                              const libmv_CameraIntrinsicsOptions* libmv_camera_intrinsics_options,
+                              libmv_ReconstructionOptions* libmv_reconstruction_options,
+                              libmv_Reconstruction *_libmv_reconstruction)
 {
   Ptr<Feature2D> edetector = ORB::create(10000);
   Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
@@ -521,39 +450,30 @@ libmv_solveReconstructionImpl( const std::vector<std::string> &images,
   parser_2D_tracks( matches, tracks );
 
   // Perform reconstruction
-  libmv_solveReconstruction( tracks, keyframe1, keyframe2,
-                             focal_length, principal_x, principal_y, k1, k2, k3,
-                             libmv_reconstruction, refine_intrinsics );
+  libmv_Reconstruction *libmv_reconstruction =
+    libmv_solveReconstruction(tracks,
+                              libmv_camera_intrinsics_options,
+                              libmv_reconstruction_options,
+                              _libmv_reconstruction);
+
+  if ( libmv_reconstruction->is_valid )
+    _libmv_reconstruction = libmv_reconstruction;
 }
 
 template <class T>
 class SFMLibmvReconstructionImpl : public T
 {
 public:
+  SFMLibmvReconstructionImpl(const libmv_CameraIntrinsicsOptions &camera_instrinsic_options,
+                             const libmv_ReconstructionOptions &reconstruction_options) :
+    libmv_reconstruction_options_(reconstruction_options),
+    libmv_camera_intrinsics_options_(camera_instrinsic_options) {}
 
-  virtual void run(const std::vector<Mat> &points2d, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  virtual void run(const std::vector<Mat> &points2d)
   {
     // Parse 2d points to Tracks
     Tracks tracks;
     parser_2D_tracks(points2d, tracks);
-
-    // Initialize camera options
-    libmv_camera_intrinsics_options_.distortion_model = LIBMV_DISTORTION_MODEL_POLYNOMIAL;
-    libmv_camera_intrinsics_options_.image_width = 2*principal_x;
-    libmv_camera_intrinsics_options_.image_height = 2*principal_y;
-    libmv_camera_intrinsics_options_.focal_length = focal_length;
-    libmv_camera_intrinsics_options_.principal_point_x = principal_x;
-    libmv_camera_intrinsics_options_.principal_point_y = principal_y;
-    libmv_camera_intrinsics_options_.polynomial_k1 = k1;
-    libmv_camera_intrinsics_options_.polynomial_k2 = k2;
-    libmv_camera_intrinsics_options_.polynomial_k3 = k3;
-
-    // Initialize reconstruction options
-    libmv_reconstruction_options_.select_keyframes = 1;
-    libmv_reconstruction_options_.keyframe1 = keyframe1;
-    libmv_reconstruction_options_.keyframe2 = keyframe2;
-    libmv_reconstruction_options_.refine_intrinsics = 1;
 
     // Perform reconstruction
     libmv_Reconstruction *libmv_reconstruction =
@@ -566,11 +486,12 @@ public:
       libmv_reconstruction_ = *libmv_reconstruction;
   }
 
-  virtual void run(const std::vector <std::string> &images, int keyframe1, int keyframe2, double focal_length,
-                   double principal_x, double principal_y, double k1, double k2, double k3, int refine_intrinsics=0)
+  virtual void run(const std::vector <std::string> &images)
   {
-    //libmv_solveReconstructionImpl(images, keyframe1, keyframe2, focal_length, principal_x, principal_y, k1, k2, k3,
-    //                              libmv_reconstruction_, refine_intrinsics);
+    libmv_solveReconstructionImpl(images,
+                                  &libmv_camera_intrinsics_options_,
+                                  &libmv_reconstruction_options_,
+                                  &libmv_reconstruction_);
   }
 
   virtual double getError() { return libmv_reconstruction_.error; }
@@ -615,6 +536,16 @@ public:
     return cameras;
   }
 
+  virtual void setReconstructionOptions(
+    const libmv_ReconstructionOptions &libmv_reconstruction_options) {
+      libmv_reconstruction_options_ = libmv_reconstruction_options;
+  }
+
+  virtual void setCameraIntrinsicOptions(
+    const libmv_CameraIntrinsicsOptions &libmv_camera_intrinsics_options) {
+      libmv_camera_intrinsics_options_ = libmv_camera_intrinsics_options;
+  }
+
 private:
   libmv_Reconstruction libmv_reconstruction_;
   libmv_ReconstructionOptions libmv_reconstruction_options_;
@@ -622,9 +553,11 @@ private:
 };
 
 
-Ptr<SFMLibmvEuclideanReconstruction> SFMLibmvEuclideanReconstruction::create()
+Ptr<SFMLibmvEuclideanReconstruction>
+SFMLibmvEuclideanReconstruction::create(const libmv_CameraIntrinsicsOptions &camera_instrinsic_options,
+                                        const libmv_ReconstructionOptions &reconstruction_options)
 {
-  return makePtr<SFMLibmvReconstructionImpl<SFMLibmvEuclideanReconstruction> >();
+  return makePtr<SFMLibmvReconstructionImpl<SFMLibmvEuclideanReconstruction> >(camera_instrinsic_options,reconstruction_options);
 }
 
 } /* namespace cv */
