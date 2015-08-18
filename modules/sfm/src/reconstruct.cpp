@@ -69,7 +69,7 @@ namespace cv
   reconstruct_(const T input, const Matx33d Ka, Ptr<SFMLibmvReconstruction> reconstruction)
   {
     // Initial reconstruction
-    const int keyframe1 = 1, keyframe2 = 30;
+    const int keyframe1 = 1, keyframe2 = 2;
 
     // Camera data
     const double focal_length = Ka(0,0);

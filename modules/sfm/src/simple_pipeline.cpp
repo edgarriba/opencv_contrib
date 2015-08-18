@@ -46,12 +46,12 @@
 #include "libmv/correspondence/matches.h"
 #include "libmv/correspondence/nRobustViewMatching.h"
 
-#include "libmv/simple_pipeline/pipeline.h"
-#include "libmv/simple_pipeline/camera_intrinsics.h"
 #include "libmv/simple_pipeline/bundle.h"
+#include "libmv/simple_pipeline/camera_intrinsics.h"
+#include "libmv/simple_pipeline/keyframe_selection.h"
 #include "libmv/simple_pipeline/initialize_reconstruction.h"
+#include "libmv/simple_pipeline/pipeline.h"
 #include "libmv/simple_pipeline/reconstruction_scale.h"
-//#include "libmv/simple_pipeline/uncalibrated_reconstructor.h"
 #include "libmv/simple_pipeline/tracks.h"
 
 using namespace cv;
@@ -110,7 +110,67 @@ bool selectTwoKeyframesBasedOnGRICAndVariance(
     int& keyframe1,
     int& keyframe2) {
 
-  // TODO: implement me (check blender api)
+  libmv::vector<int> keyframes;
+
+  /* Get list of all keyframe candidates first. */
+  SelectKeyframesBasedOnGRICAndVariance(normalized_tracks,
+                                        camera_intrinsics,
+                                        keyframes);
+
+  if (keyframes.size() < 2) {
+    LG << "Not enough keyframes detected by GRIC";
+    return false;
+  } else if (keyframes.size() == 2) {
+    keyframe1 = keyframes[0];
+    keyframe2 = keyframes[1];
+    return true;
+  }
+
+  /* Now choose two keyframes with minimal reprojection error after initial
+   * reconstruction choose keyframes with the least reprojection error after
+   * solving from two candidate keyframes.
+   *
+   * In fact, currently libmv returns single pair only, so this code will
+   * not actually run. But in the future this could change, so let's stay
+   * prepared.
+   */
+  int previous_keyframe = keyframes[0];
+  double best_error = std::numeric_limits<double>::max();
+  for (int i = 1; i < keyframes.size(); i++) {
+    EuclideanReconstruction reconstruction;
+    int current_keyframe = keyframes[i];
+    libmv::vector<Marker> keyframe_markers =
+      normalized_tracks.MarkersForTracksInBothImages(previous_keyframe,
+                                                     current_keyframe);
+
+    Tracks keyframe_tracks(keyframe_markers);
+
+    /* get a solution from two keyframes only */
+    EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
+    EuclideanBundle(keyframe_tracks, &reconstruction);
+    //EuclideanCompleteReconstruction(keyframe_tracks,
+    //                                &reconstruction,
+    //                                NULL);
+    libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(),
+                                         keyframe_tracks,
+                                         &reconstruction);
+
+    double current_error = EuclideanReprojectionError(tracks,
+                                                      reconstruction,
+                                                      camera_intrinsics);
+
+    LG << "Error between " << previous_keyframe
+       << " and " << current_keyframe
+       << ": " << current_error;
+
+    if (current_error < best_error) {
+      best_error = current_error;
+      keyframe1 = previous_keyframe;
+      keyframe2 = current_keyframe;
+    }
+
+    previous_keyframe = current_keyframe;
+  }
 
   return true;
 }
@@ -490,7 +550,7 @@ public:
     libmv_camera_intrinsics_options_.polynomial_k3 = k3;
 
     // Initialize reconstruction options
-    libmv_reconstruction_options_.select_keyframes = 0;
+    libmv_reconstruction_options_.select_keyframes = 1;
     libmv_reconstruction_options_.keyframe1 = keyframe1;
     libmv_reconstruction_options_.keyframe2 = keyframe2;
     libmv_reconstruction_options_.refine_intrinsics = 1;

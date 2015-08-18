@@ -37,7 +37,7 @@ intersection(Vec3d &bmin, Vec3d &bmax, Vec3d &orig, Vec3d &end);
 int main(int argc, char* argv[])
 {
   int nviews = 20;
-  int npoints = 500;
+  int npoints = 50;
 
   // read input parameters
   if ( argc > 1 )

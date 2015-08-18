@@ -45,7 +45,6 @@ set(LIBMV_LIGHT_LIBS
   correspondence
   camera
   multiview
-  multiview_test_data
   numeric
   ${GLOG_LIBRARIES}
   ${GFLAGS_LIBRARIES}
