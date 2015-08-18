@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::sfm;
 
 static void help() {
   cout
@@ -16,7 +17,7 @@ static void help() {
       << " OpenCV Structure From Motion (SFM) module.\n"
       << " \n"
       << " Usage:\n"
-      << "        example_sfm_nView_scene_reconstruction <path_to_tracks_file> <f> <cx> <cy>\n"
+      << "        example_sfm_simple_pipeline <path_to_tracks_file> <f> <cx> <cy>\n"
       << " where: is the tracks file absolute path into your system. \n"
       << " \n"
       << "        The file must have the following format: \n"
@@ -50,31 +51,48 @@ int main(int argc, char** argv)
     exit(0);
   }
 
-  // Do projective reconstruction
-  bool is_projective = true;
-
-  // Assume noise free
-  bool has_outliers = false;
-
-  // Assume the input images are a sequence
-  bool is_sequence = true;
-
   // Read 2D points from text file
   std::vector<Mat> points2d;
   parser_2D_tracks( argv[1], points2d );
 
   // Set the camera calibration matrix
-  double f = atof(argv[2]), cx = atof(argv[3]), cy = atof(argv[4]);
+  const double f  = atof(argv[2]),
+               cx = atof(argv[3]), cy = atof(argv[4]);
 
-  Matx33d K = Matx33d(f, 0, cx,
-                      0, f, cy,
-                      0,  0, 1);
+  // Initial reconstruction
+  const int keyframe1 = 1, keyframe2 = 30; // hardcoded
+  const int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
+  const int select_keyframes = 0; // disable automatic keyframes selection
 
-  // Perform reconstruction
+  // Simple pipeline options
+  libmv_CameraIntrinsicsOptions camera_instrinsic_options =
+    libmv_CameraIntrinsicsOptions(LIBMV_DISTORTION_MODEL_POLYNOMIAL, f, cx, cy);
+
+  libmv_ReconstructionOptions reconstruction_options(keyframe1, keyframe2, refine_intrinsics, select_keyframes);
+
+  Ptr<SFMLibmvReconstruction> euclidean_reconstruction =
+      SFMLibmvEuclideanReconstruction::create(camera_instrinsic_options, reconstruction_options);
+
+  // Run reconstruction pipeline
+  euclidean_reconstruction->run(points2d);
+
+  // Extract estimated camera poses
+  std::vector<std::pair<Matx33d,Vec3d> > cameras =
+    euclidean_reconstruction->getCameras();
+
   std::vector<cv::Mat> Rs_est, ts_est;
-  Mat_<double> points3d_estimated;
-  std::vector < cv::Mat > Ps_estimated;
-  reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective, has_outliers, is_sequence);
+  for (size_t i = 0; i < cameras.size(); ++i)
+  {
+    Rs_est.push_back(Mat(cameras[i].first));
+    ts_est.push_back(Mat(cameras[i].second));
+  }
+
+  // Extract reconstructed points
+  Mat_<double> points3d_estimated =
+    Mat_<double>(euclidean_reconstruction->getPoints());
+
+  // Extract refined intrinsics
+  Matx33d K = euclidean_reconstruction->getIntrinsics();
 
 
   // Print output
