@@ -118,12 +118,17 @@ public:
   virtual ~SFMLibmvReconstruction() {};
 
   virtual void run(const std::vector<cv::Mat> &points2d) = 0;
-  virtual void run(const std::vector <std::string> &images) = 0;
+  virtual void run(const std::vector<cv::Mat> &points2d, cv::Matx33d &K, std::vector<cv::Matx33d> &Rs,
+                   std::vector<cv::Vec3d> &Ts, cv::Mat &points3d) = 0;
 
-  virtual double getError() = 0;
-  virtual cv::Mat getPoints() = 0;
-  virtual cv::Mat getIntrinsics() = 0;
-  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
+  virtual void run(const std::vector <std::string> &images) = 0;
+  virtual void run(const std::vector <std::string> &images, cv::Matx33d &K, std::vector<cv::Matx33d> &Rs,
+                   std::vector<cv::Vec3d> &Ts, cv::Mat &points3d) = 0;
+
+  virtual double getError() const = 0;
+  virtual cv::Mat getPoints() const = 0;
+  virtual cv::Mat getIntrinsics() const = 0;
+  virtual void getCameras(std::vector<cv::Matx33d> &Rs, std::vector<cv::Vec3d> &Ts) = 0;
 
   virtual void
   setReconstructionOptions(const libmv_ReconstructionOptions &libmv_reconstruction_options) = 0;
@@ -137,12 +142,17 @@ class CV_EXPORTS SFMLibmvEuclideanReconstruction : public SFMLibmvReconstruction
 {
 public:
   virtual void run(const std::vector<cv::Mat> &points2d) = 0;
-  virtual void run(const std::vector <std::string> &images) = 0;
+  virtual void run(const std::vector<cv::Mat> &points2d, cv::Matx33d &K, std::vector<cv::Matx33d> &Rs,
+                   std::vector<cv::Vec3d> &Ts, cv::Mat &points3d) = 0;
 
-  virtual double getError() = 0;
-  virtual cv::Mat getPoints() = 0;
-  virtual cv::Mat getIntrinsics() = 0;
-  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras() = 0;
+  virtual void run(const std::vector <std::string> &images) = 0;
+  virtual void run(const std::vector <std::string> &images, cv::Matx33d &K, std::vector<cv::Matx33d> &Rs,
+                   std::vector<cv::Vec3d> &Ts, cv::Mat &points3d) = 0;
+
+  virtual double getError() const = 0;
+  virtual cv::Mat getPoints() const = 0;
+  virtual cv::Mat getIntrinsics() const = 0;
+  virtual void getCameras(std::vector<cv::Matx33d> &Rs, std::vector<cv::Vec3d> &Ts) = 0;
 
   virtual void
   setReconstructionOptions(const libmv_ReconstructionOptions &libmv_reconstruction_options) = 0;

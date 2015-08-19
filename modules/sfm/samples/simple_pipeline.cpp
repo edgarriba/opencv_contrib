@@ -77,15 +77,9 @@ int main(int argc, char** argv)
   euclidean_reconstruction->run(points2d);
 
   // Extract estimated camera poses
-  std::vector<std::pair<Matx33d,Vec3d> > cameras =
-    euclidean_reconstruction->getCameras();
-
-  std::vector<cv::Mat> Rs_est, ts_est;
-  for (size_t i = 0; i < cameras.size(); ++i)
-  {
-    Rs_est.push_back(Mat(cameras[i].first));
-    ts_est.push_back(Mat(cameras[i].second));
-  }
+  vector<Matx33d> Rs_est;
+  vector<Vec3d> ts_est;
+  euclidean_reconstruction->getCameras(Rs_est, ts_est);
 
   // Extract reconstructed points
   Mat_<double> points3d_estimated =

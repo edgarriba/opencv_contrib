@@ -261,6 +261,8 @@ namespace cv
         rrp = rr - repeat(rrBar, x.rows, x.cols);
         rlp = rl - repeat(rlBar, xp.rows, xp.cols);
 
+        // TODO: finish implementation
+        // https://github.com/vrabaud/sfm_toolbox/blob/master/sfm/computeOrientation.m#L44
 
     }
 

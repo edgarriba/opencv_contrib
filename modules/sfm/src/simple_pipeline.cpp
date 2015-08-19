@@ -525,7 +525,10 @@ public:
     libmv_reconstruction_options_(reconstruction_options),
     libmv_camera_intrinsics_options_(camera_instrinsic_options) {}
 
-  virtual void run(const std::vector<Mat> &points2d)
+  /* Run the pipeline given 2d points
+   */
+
+  virtual void run(const std::vector<cv::Mat> &points2d)
   {
     // Parse 2d points to Tracks
     Tracks tracks;
@@ -537,10 +540,24 @@ public:
                                 &libmv_camera_intrinsics_options_,
                                 &libmv_reconstruction_options_,
                                 &libmv_reconstruction_);
-
+    // Check all went OK
     if ( libmv_reconstruction->is_valid )
       libmv_reconstruction_ = *libmv_reconstruction;
   }
+
+  virtual void run(const std::vector<Mat> &points2d, Matx33d &K, std::vector<Matx33d> &Rs,
+                   std::vector<Vec3d> &Ts, Mat &points3d)
+  {
+    // Run the pipeline
+    run(points2d);
+
+    // Extract Data
+    extractLibmvReconstructionData(K, points3d, Rs, Ts);
+  }
+
+
+  /* Run the pipeline given a set of images
+   */
 
   virtual void run(const std::vector <std::string> &images)
   {
@@ -550,10 +567,20 @@ public:
                                   &libmv_reconstruction_);
   }
 
-  virtual double getError() { return libmv_reconstruction_.error; }
 
-  virtual Mat getPoints()
+  virtual void run(const std::vector <string> &images, Matx33d &K, std::vector<Matx33d> &Rs,
+                   std::vector<Vec3d> &Ts, Mat &points3d)
   {
+    // Run the pipeline
+    run(images);
+
+    // Extract Data
+    extractLibmvReconstructionData(K, points3d, Rs, Ts);
+  }
+
+  virtual double getError() const { return libmv_reconstruction_.error; }
+
+  virtual Mat getPoints() const {
     const size_t n_points =
       libmv_reconstruction_.reconstruction.AllPoints().size();
 
@@ -567,29 +594,26 @@ public:
     return points3d;
   }
 
-  virtual cv::Mat getIntrinsics()
-  {
+  virtual cv::Mat getIntrinsics() const {
     Mat K;
     eigen2cv(libmv_reconstruction_.intrinsics->K(), K);
     return K;
   }
 
-  virtual std::vector<std::pair<Matx33d,Vec3d> > getCameras()
-  {
+  virtual void
+  getCameras(std::vector<cv::Matx33d> &Rs, std::vector<cv::Vec3d> &Ts) {
     const size_t n_views =
       libmv_reconstruction_.reconstruction.AllCameras().size();
 
     Matx33d R;
     Vec3d t;
-    std::vector<std::pair<Matx33d,Vec3d> > cameras;
-
     for(size_t i = 0; i < n_views; ++i)
     {
       eigen2cv(libmv_reconstruction_.reconstruction.AllCameras()[i].R, R);
       eigen2cv(libmv_reconstruction_.reconstruction.AllCameras()[i].t, t);
-      cameras.push_back(std::make_pair(R,t));
+      Rs.push_back(R);
+      Ts.push_back(t);
     }
-    return cameras;
   }
 
   virtual void setReconstructionOptions(
@@ -603,6 +627,17 @@ public:
   }
 
 private:
+
+  void
+  extractLibmvReconstructionData(Matx33d &K, Mat &points3d,
+                                 std::vector<Matx33d> &Rs,
+                                 std::vector<Vec3d> &Ts)
+  {
+    points3d = this->getPoints();
+    K = this->getIntrinsics();
+    this->getCameras(Rs, Ts);
+  }
+
   libmv_Reconstruction libmv_reconstruction_;
   libmv_ReconstructionOptions libmv_reconstruction_options_;
   libmv_CameraIntrinsicsOptions libmv_camera_intrinsics_options_;
