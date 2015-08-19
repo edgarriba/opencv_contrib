@@ -85,7 +85,7 @@ TEST(Sfm_simple_pipeline, backyard)
     cout << "euclidean_reconstruction error = " << error << endl;
 
     EXPECT_LE( error, 1.4 );  // actually 1.38671
-                              // UPDATE:  1.36136
+                              // UPDATE:  1.38894
 }
 
 #endif /* CERES_FOUND */
