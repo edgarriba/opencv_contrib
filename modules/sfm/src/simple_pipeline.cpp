@@ -63,6 +63,10 @@ namespace cv
 namespace sfm
 {
 
+////////////////////////////////////////
+// Based on 'libmv_capi' (blender API)
+///////////////////////////////////////
+
 struct libmv_Reconstruction {
   EuclideanReconstruction reconstruction;
 
@@ -75,7 +79,12 @@ struct libmv_Reconstruction {
 };
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'selectTwoKeyframesBasedOnGRICAndVariance()' function from 'libmv_capi' (blender API)
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Select the two keyframes that give a lower reprojection error
+ */
 
 bool selectTwoKeyframesBasedOnGRICAndVariance(
     Tracks& tracks,
@@ -147,7 +156,13 @@ bool selectTwoKeyframesBasedOnGRICAndVariance(
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'libmv_cameraIntrinsicsFillFromOptions()' function from 'libmv_capi' (blender API)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Fill the camera intrinsics parameters given the camera instrinsics
+ * options values.
+ */
 
 static void libmv_cameraIntrinsicsFillFromOptions(
     const libmv_CameraIntrinsicsOptions* camera_intrinsics_options,
@@ -193,7 +208,13 @@ static void libmv_cameraIntrinsicsFillFromOptions(
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'libmv_cameraIntrinsicsCreateFromOptions()' function from 'libmv_capi' (blender API)
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Create the camera intrinsics model given the camera instrinsics
+ * options values.
+ */
 
 CameraIntrinsics* libmv_cameraIntrinsicsCreateFromOptions(
     const libmv_CameraIntrinsicsOptions* camera_intrinsics_options) {
@@ -214,7 +235,12 @@ CameraIntrinsics* libmv_cameraIntrinsicsCreateFromOptions(
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'libmv_getNormalizedTracks()' function from 'libmv_capi' (blender API)
+////////////////////////////////////////////////////////////////////////////////////////
+
+/* Normalizes the tracks given the camera intrinsics parameters
+ */
 
 void
 libmv_getNormalizedTracks(const libmv::Tracks &tracks,
@@ -233,7 +259,12 @@ libmv_getNormalizedTracks(const libmv::Tracks &tracks,
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'libmv_solveRefineIntrinsics()' function from 'libmv_capi' (blender API)
+//////////////////////////////////////////////////////////////////////////////////////////
+
+/* Refine the final solution using Bundle Adjustment
+ */
 
 void libmv_solveRefineIntrinsics(
     const Tracks &tracks,
@@ -265,7 +296,12 @@ void libmv_solveRefineIntrinsics(
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////
 // Based on the 'finishReconstruction()' function from 'libmv_capi' (blender API)
+///////////////////////////////////////////////////////////////////////////////////
+
+/* Finish the reconstrunction and computes the final reprojection error
+ */
 
 void finishReconstruction(
     const Tracks &tracks,
@@ -282,7 +318,12 @@ void finishReconstruction(
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////
 // Based on the 'libmv_solveReconstruction()' function from 'libmv_capi' (blender API)
+////////////////////////////////////////////////////////////////////////////////////////
+
+/* Perform the complete reconstruction process
+ */
 
 libmv_Reconstruction *libmv_solveReconstruction(
     const Tracks &libmv_tracks,
@@ -363,6 +404,10 @@ libmv_Reconstruction *libmv_solveReconstruction(
   return (libmv_Reconstruction *) libmv_reconstruction;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Parses a given array of 2d points into the libmv tracks structure
+ */
 
 void
 parser_2D_tracks( const std::vector<Mat> &points2d, libmv::Tracks &tracks )
@@ -388,6 +433,10 @@ parser_2D_tracks( const std::vector<Mat> &points2d, libmv::Tracks &tracks )
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Parses a given set of matches into the libmv tracks structure
+ */
 
 void
 parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
@@ -427,6 +476,11 @@ parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/* Computes the 2d features matches between a given set of images and call the
+ * reconstruction pipeline.
+ */
 
 void
 libmv_solveReconstructionImpl(const std::vector<std::string> &images,
@@ -459,6 +513,8 @@ libmv_solveReconstructionImpl(const std::vector<std::string> &images,
   if ( libmv_reconstruction->is_valid )
     _libmv_reconstruction = libmv_reconstruction;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class T>
 class SFMLibmvReconstructionImpl : public T
@@ -552,6 +608,7 @@ private:
   libmv_CameraIntrinsicsOptions libmv_camera_intrinsics_options_;
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 Ptr<SFMLibmvEuclideanReconstruction>
 SFMLibmvEuclideanReconstruction::create(const libmv_CameraIntrinsicsOptions &camera_instrinsic_options,
@@ -559,6 +616,8 @@ SFMLibmvEuclideanReconstruction::create(const libmv_CameraIntrinsicsOptions &cam
 {
   return makePtr<SFMLibmvReconstructionImpl<SFMLibmvEuclideanReconstruction> >(camera_instrinsic_options,reconstruction_options);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 } /* namespace cv */
 } /* namespace sfm */
