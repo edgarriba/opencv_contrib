@@ -122,9 +122,9 @@ bool selectTwoKeyframesBasedOnGRICAndVariance(
     /* get a solution from two keyframes only */
     EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
     EuclideanBundle(keyframe_tracks, &reconstruction);
-    EuclideanCompleteReconstruction(ReconstructionOptions(),
-                                    keyframe_tracks,
-                                    &reconstruction);
+    EuclideanCompleteReconstruction(keyframe_tracks,
+                                &reconstruction,
+                                NULL);
 
     double current_error = EuclideanReprojectionError(tracks,
                                                       reconstruction,
@@ -336,11 +336,11 @@ libmv_Reconstruction *libmv_solveReconstruction(
     return libmv_reconstruction;
   }
 
-  libmv::EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
-  libmv::EuclideanBundle(normalized_tracks, &reconstruction);
-  libmv::EuclideanCompleteReconstruction(libmv::ReconstructionOptions(),
-                                         normalized_tracks,
-                                         &reconstruction);
+  EuclideanReconstructTwoFrames(keyframe_markers, &reconstruction);
+  EuclideanBundle(normalized_tracks, &reconstruction);
+  EuclideanCompleteReconstruction(normalized_tracks,
+                                  &reconstruction,
+                                  NULL);
 
   /* Refinement/ */
   if (libmv_reconstruction_options->refine_intrinsics) {
