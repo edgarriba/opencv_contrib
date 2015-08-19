@@ -34,14 +34,12 @@ endif()
 
 set(LIBMV_LIGHT_INCLUDES
   src/libmv_light
-  src/libmv_light/third_party/ssba
   "${OpenCV_SOURCE_DIR}/include/opencv"
   "${GLOG_INCLUDE_DIRS}"
   "${GFLAGS_INCLUDE_DIRS}"
 )
 
 set(LIBMV_LIGHT_LIBS
-  reconstruction
   correspondence
   camera
   multiview
