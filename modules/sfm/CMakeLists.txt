@@ -41,7 +41,6 @@ set(LIBMV_LIGHT_INCLUDES
 
 set(LIBMV_LIGHT_LIBS
   correspondence
-  camera
   multiview
   numeric
   ${GLOG_LIBRARIES}
