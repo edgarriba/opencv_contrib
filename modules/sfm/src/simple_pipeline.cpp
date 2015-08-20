@@ -482,11 +482,10 @@ parser_2D_tracks( const libmv::Matches &matches, libmv::Tracks &tracks )
  * reconstruction pipeline.
  */
 
-void
-libmv_solveReconstructionImpl(const std::vector<std::string> &images,
-                              const libmv_CameraIntrinsicsOptions* libmv_camera_intrinsics_options,
-                              libmv_ReconstructionOptions* libmv_reconstruction_options,
-                              libmv_Reconstruction *_libmv_reconstruction)
+libmv_Reconstruction *libmv_solveReconstructionImpl(
+  const std::vector<std::string> &images,
+  const libmv_CameraIntrinsicsOptions* libmv_camera_intrinsics_options,
+  libmv_ReconstructionOptions* libmv_reconstruction_options)
 {
   Ptr<Feature2D> edetector = ORB::create(10000);
   Ptr<Feature2D> edescriber = xfeatures2d::DAISY::create();
@@ -504,10 +503,9 @@ libmv_solveReconstructionImpl(const std::vector<std::string> &images,
   parser_2D_tracks( matches, tracks );
 
   // Perform reconstruction
-  _libmv_reconstruction =
-    libmv_solveReconstruction(tracks,
-                              libmv_camera_intrinsics_options,
-                              libmv_reconstruction_options);
+  return libmv_solveReconstruction(tracks,
+                                   libmv_camera_intrinsics_options,
+                                   libmv_reconstruction_options);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -553,10 +551,10 @@ public:
 
   virtual void run(const std::vector <std::string> &images)
   {
-    libmv_solveReconstructionImpl(images,
-                                  &libmv_camera_intrinsics_options_,
-                                  &libmv_reconstruction_options_,
-                                  &libmv_reconstruction_);
+    libmv_reconstruction_ =
+      *libmv_solveReconstructionImpl(images,
+                                     &libmv_camera_intrinsics_options_,
+                                     &libmv_reconstruction_options_);
   }
 
 
