@@ -47,9 +47,6 @@ using namespace cv;
 using namespace cv::sfm;
 using namespace std;
 
-// Temp debug macro
-#define BR exit(1);
-
 namespace cv
 {
   template<class T>

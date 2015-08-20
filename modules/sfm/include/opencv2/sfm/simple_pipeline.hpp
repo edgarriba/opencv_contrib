@@ -92,10 +92,10 @@ typedef struct libmv_CameraIntrinsicsOptions {
 } libmv_CameraIntrinsicsOptions;
 
 
-enum { SFM_REFINE_FOCAL_LENGTH         = 1,  // libmv::BUNDLE_FOCAL_LENGTH
-       SFM_REFINE_PRINCIPAL_POINT      = 2,  // libmv::BUNDLE_PRINCIPAL_POINT
-       SFM_REFINE_RADIAL_DISTORTION_K1 = 4,  // libmv::BUNDLE_RADIAL_K1
-       SFM_REFINE_RADIAL_DISTORTION_K2 = 8,  // libmv::BUNDLE_RADIAL_K2
+enum { SFM_REFINE_FOCAL_LENGTH         = (1 << 0),  // libmv::BUNDLE_FOCAL_LENGTH
+       SFM_REFINE_PRINCIPAL_POINT      = (1 << 1),  // libmv::BUNDLE_PRINCIPAL_POINT
+       SFM_REFINE_RADIAL_DISTORTION_K1 = (1 << 2),  // libmv::BUNDLE_RADIAL_K1
+       SFM_REFINE_RADIAL_DISTORTION_K2 = (1 << 4),  // libmv::BUNDLE_RADIAL_K2
 };
 
 typedef struct libmv_ReconstructionOptions {

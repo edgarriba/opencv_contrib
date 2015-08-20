@@ -328,9 +328,9 @@ void finishReconstruction(
 libmv_Reconstruction *libmv_solveReconstruction(
     const Tracks &libmv_tracks,
     const libmv_CameraIntrinsicsOptions* libmv_camera_intrinsics_options,
-    libmv_ReconstructionOptions* libmv_reconstruction_options,
-    libmv_Reconstruction *libmv_reconstruction)
-{
+    libmv_ReconstructionOptions* libmv_reconstruction_options) {
+  libmv_Reconstruction *libmv_reconstruction =
+    new libmv_Reconstruction();
 
   Tracks tracks = libmv_tracks;
   EuclideanReconstruction &reconstruction =
@@ -504,14 +504,10 @@ libmv_solveReconstructionImpl(const std::vector<std::string> &images,
   parser_2D_tracks( matches, tracks );
 
   // Perform reconstruction
-  libmv_Reconstruction *libmv_reconstruction =
+  _libmv_reconstruction =
     libmv_solveReconstruction(tracks,
                               libmv_camera_intrinsics_options,
-                              libmv_reconstruction_options,
-                              _libmv_reconstruction);
-
-  if ( libmv_reconstruction->is_valid )
-    _libmv_reconstruction = libmv_reconstruction;
+                              libmv_reconstruction_options);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -535,14 +531,10 @@ public:
     parser_2D_tracks(points2d, tracks);
 
     // Perform reconstruction
-    libmv_Reconstruction *libmv_reconstruction =
-      libmv_solveReconstruction(tracks,
-                                &libmv_camera_intrinsics_options_,
-                                &libmv_reconstruction_options_,
-                                &libmv_reconstruction_);
-    // Check all went OK
-    if ( libmv_reconstruction->is_valid )
-      libmv_reconstruction_ = *libmv_reconstruction;
+    libmv_reconstruction_ =
+      *libmv_solveReconstruction(tracks,
+                                 &libmv_camera_intrinsics_options_,
+                                 &libmv_reconstruction_options_);
   }
 
   virtual void run(const std::vector<Mat> &points2d, Matx33d &K, std::vector<Matx33d> &Rs,

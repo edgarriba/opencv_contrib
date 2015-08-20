@@ -13,7 +13,7 @@ using namespace cv::sfm;
 static void help() {
   cout
       << "\n------------------------------------------------------------------\n"
-      << " This program shows the n view reconstruction capabilities in the \n"
+      << " This program shows the camera path reconstruction capabilities in the \n"
       << " OpenCV Structure From Motion (SFM) module.\n"
       << " \n"
       << " Usage:\n"
@@ -38,134 +38,18 @@ static void help() {
       << endl;
 }
 
-void
-parser_2D_tracks(const string &_filename, std::vector<Mat> &points2d );
 
-int main(int argc, char** argv)
-{
-  // Read input parameters
-
-  if ( argc != 5 )
-  {
-    help();
-    exit(0);
-  }
-
-  // Read 2D points from text file
-  std::vector<Mat> points2d;
-  parser_2D_tracks( argv[1], points2d );
-
-  // Set the camera calibration matrix
-  const double f  = atof(argv[2]),
-               cx = atof(argv[3]), cy = atof(argv[4]);
-
-  // Initial reconstruction
-  const int keyframe1 = 1, keyframe2 = 30; // hardcoded
-  const int refine_intrinsics = SFM_REFINE_FOCAL_LENGTH | SFM_REFINE_PRINCIPAL_POINT | SFM_REFINE_RADIAL_DISTORTION_K1 | SFM_REFINE_RADIAL_DISTORTION_K2;
-  const int select_keyframes = 0; // disable automatic keyframes selection
-
-  // Simple pipeline options
-  libmv_CameraIntrinsicsOptions camera_instrinsic_options =
-    libmv_CameraIntrinsicsOptions(LIBMV_DISTORTION_MODEL_POLYNOMIAL, f, cx, cy);
-
-  libmv_ReconstructionOptions reconstruction_options(keyframe1, keyframe2, refine_intrinsics, select_keyframes);
-
-  Ptr<SFMLibmvReconstruction> euclidean_reconstruction =
-      SFMLibmvEuclideanReconstruction::create(camera_instrinsic_options, reconstruction_options);
-
-  // Run reconstruction pipeline
-  euclidean_reconstruction->run(points2d);
-
-  // Extract estimated camera poses
-  vector<Matx33d> Rs_est;
-  vector<Vec3d> ts_est;
-  euclidean_reconstruction->getCameras(Rs_est, ts_est);
-
-  // Extract reconstructed points
-  Mat_<double> points3d_estimated =
-    Mat_<double>(euclidean_reconstruction->getPoints());
-
-  // Extract refined intrinsics
-  Matx33d K = euclidean_reconstruction->getIntrinsics();
-
-
-  // Print output
-
-  cout << "\n----------------------------\n" << endl;
-  cout << "Reconstruction: " << endl;
-  cout << "============================" << endl;
-  cout << "Estimated 3D points: " << points3d_estimated.cols << endl;
-  cout << "Estimated cameras: " << Rs_est.size() << endl;
-  cout << "Refined intrinsics: " << endl << K << endl << endl;
-
-  cout << "3D Visualization: " << endl;
-  cout << "============================" << endl;
-
-
-  /// Create 3D windows
-  viz::Viz3d window_est("Estimation Coordinate Frame");
-
-  /// Add coordinate axes
-  window_est.showWidget("Estimation Coordinate Widget", viz::WCoordinateSystem());
-
-  // Create the pointcloud
-  cout << "Recovering points  ... ";
-
-  std::vector<cv::Vec3f> point_cloud_est;
-  for (int i = 0; i < points3d_estimated.cols; ++i) {
-
-    // recover estimated points3d
-    cv::Vec3f point3d_est((float) points3d_estimated(0, i),
-                          (float) points3d_estimated(1, i),
-                          (float) points3d_estimated(2, i));
-    point_cloud_est.push_back(point3d_est);
-  }
-
-  cout << "[DONE]" << endl;
-
-
-  /// Recovering cameras
-  cout << "Recovering cameras ... ";
-
-  std::vector<Affine3d> path_est;
-  for (size_t i = 0; i < Rs_est.size(); ++i)
-    path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
-
-  cout << "[DONE]" << endl;
-
-
-  /// Add the pointcloud
-  cout << "Rendering points   ... ";
-
-  if ( point_cloud_est.size() > 0 )
-  {
-    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
-    window_est.showWidget("point_cloud_est", cloud_est_widget);
-  }
-
-  cout << "[DONE]" << endl;
-
-
-  /// Add cameras
-  cout << "Rendering Cameras  ... ";
-
-  if ( path_est.size() > 0 )
-  {
-    window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::BOTH, 0.2, viz::Color::green()));
-    window_est.showWidget("cameras_frustums_est", viz::WTrajectoryFrustums(path_est, K, 0.3, viz::Color::yellow()));
-  }
-
-  cout << "[DONE]" << endl;
-
-
-  /// Wait for key 'q' to close the window
-  cout << endl << "Press 'q' to close each windows ... " << endl;
-
-  window_est.spin();
-
-  return 0;
-}
-
+/* Build the following structure data
+ *
+ *            frame1           frame2           frameN
+ *  track1 | (x11,y11) | -> | (x12,y12) | -> | (x1N,y1N) |
+ *  track2 | (x21,y11) | -> | (x22,y22) | -> | (x2N,y2N) |
+ *  trackN | (xN1,yN1) | -> | (xN2,yN2) | -> | (xNN,yNN) |
+ *
+ *
+ *  In case a marker (x,y) does not appear in a frame its
+ *  values will be (-1,-1).
+ */
 
 void
 parser_2D_tracks(const string &_filename, std::vector<Mat> &points2d )
@@ -214,4 +98,124 @@ parser_2D_tracks(const string &_filename, std::vector<Mat> &points2d )
     myfile.close();
   }
 
+}
+
+
+/* Sample main code
+ */
+
+int main(int argc, char** argv)
+{
+  // Read input parameters
+
+  if ( argc != 5 )
+  {
+    help();
+    exit(0);
+  }
+
+  // Read 2D points from text file
+  std::vector<Mat> points2d;
+  parser_2D_tracks( argv[1], points2d );
+
+  // Set the camera calibration matrix
+  const double f  = atof(argv[2]),
+               cx = atof(argv[3]), cy = atof(argv[4]);
+
+  Matx33d K = Matx33d( f, 0, cx,
+                       0, f, cy,
+                       0, 0,  1);
+
+  /// Reconstruct the scene using the 2d correspondences
+
+  bool is_projective = false;
+  vector<Mat> Rs_est, ts_est;
+  Mat_<double> points3d_estimated;
+  reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective);
+
+
+  // Print output
+
+  cout << "\n----------------------------\n" << endl;
+  cout << "Reconstruction: " << endl;
+  cout << "============================" << endl;
+  cout << "Estimated 3D points: " << points3d_estimated.cols << endl;
+  cout << "Estimated cameras: " << Rs_est.size() << endl;
+  cout << "Refined intrinsics: " << endl << K << endl << endl;
+
+  cout << "3D Visualization: " << endl;
+  cout << "============================" << endl;
+
+
+  /// Create 3D windows
+  viz::Viz3d window_est("Estimation Coordinate Frame");
+
+  // Create the pointcloud
+  cout << "Recovering points  ... ";
+
+  std::vector<cv::Vec3f> point_cloud_est;
+  for (int i = 0; i < points3d_estimated.cols; ++i) {
+
+    // recover estimated points3d
+    cv::Vec3f point3d_est((float) points3d_estimated(0, i),
+                          (float) points3d_estimated(1, i),
+                          (float) points3d_estimated(2, i));
+    point_cloud_est.push_back(point3d_est);
+  }
+
+  cout << "[DONE]" << endl;
+
+
+  /// Recovering cameras
+  cout << "Recovering cameras ... ";
+
+  std::vector<Affine3d> path_est;
+  for (size_t i = 0; i < Rs_est.size(); ++i)
+    path_est.push_back(Affine3d(Rs_est[i],ts_est[i]));
+
+  cout << "[DONE]" << endl;
+
+
+  /// Add the pointcloud
+  cout << "Rendering points   ... ";
+
+  if ( point_cloud_est.size() > 0 )
+  {
+    viz::WCloud cloud_est_widget(point_cloud_est, viz::Color::red());
+    window_est.showWidget("point_cloud_est", cloud_est_widget);
+  }
+
+  cout << "[DONE]" << endl;
+
+  /// Add cameras
+  cout << "Rendering Trajectory  ... ";
+
+  /// Wait for key 'q' to close the window
+  cout << endl << "Press 'q' to close each windows ... " << endl;
+
+  if ( path_est.size() > 0 )
+  {
+    // render complete trajectory
+    window_est.showWidget("cameras_frames_and_lines_est", viz::WTrajectory(path_est, viz::WTrajectory::PATH, 0.2, viz::Color::green()));
+
+    // animated trajectory
+    int idx = 0, forw = -1, n = static_cast<int>(path_est.size());
+
+    while(!window_est.wasStopped())
+    {
+      viz::WCameraPosition cpw(0.25); // Coordinate axes
+      viz::WCameraPosition cpw_frustum(Vec2f(0.889484, 0.523599), 0.3, viz::Color::yellow()); // Camera frustum
+      window_est.showWidget("CPW", cpw, path_est[idx]);
+      window_est.showWidget("CPW_FRUSTUM", cpw_frustum, path_est[idx]);
+
+      // update trajectory index (spring effect)
+      forw *= (idx==n || idx==0) ? -1: 1; idx += forw;
+
+      // frame rate 1s
+      window_est.spinOnce(1, true);
+    }
+
+  }
+
+  return 0;
 }
