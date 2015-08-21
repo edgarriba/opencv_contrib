@@ -128,10 +128,10 @@ int main(int argc, char** argv)
 
   /// Reconstruct the scene using the 2d correspondences
 
-  bool is_projective = false;
   vector<Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
-  reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective);
+  bool is_projective = true, has_outliers = false;
+  reconstruct(points2d, Rs_est, ts_est, K, points3d_estimated, is_projective, has_outliers);
 
 
   // Print output
@@ -149,6 +149,7 @@ int main(int argc, char** argv)
 
   /// Create 3D windows
   viz::Viz3d window_est("Estimation Coordinate Frame");
+             window_est.setBackgroundColor(); // black by default
 
   // Create the pointcloud
   cout << "Recovering points  ... ";

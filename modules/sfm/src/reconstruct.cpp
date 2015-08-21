@@ -106,8 +106,8 @@ namespace cv
 
   //  Reconstruction function for API
   void
-  reconstruct(const InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, OutputArray points3d,
-    bool is_projective, bool has_outliers, bool is_sequence)
+  reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K,
+              bool is_projective, bool has_outliers)
   {
     const int nviews = points2d.total();
     CV_Assert( nviews >= 2 );
@@ -150,6 +150,29 @@ namespace cv
 
         // Triangulate and find 3D points using inliers
         triangulatePoints(points2d, projection_matrices, points3d);
+
+        // TODO: extract K
+        //
+      }
+      else if (nviews > 2)
+      {
+        Matx33d Ka = K.getMat();
+
+        std::vector<Mat> Rs, Ts;
+        reconstruct(pts2d, Rs, Ts, Ka, points3d, is_projective, has_outliers);
+
+        // From Rs and Ts, extract Ps
+        const int nviews = Rs.size();
+        projection_matrices.create(nviews, 1, depth);
+
+        Matx34d P;
+        for (size_t i = 0; i < nviews; ++i)
+        {
+          P_From_KRt(Ka, Rs[i], Vec3d(Ts[i]), P);
+          Mat(P).copyTo(projection_matrices.getMatRef(i));
+        }
+
+        Mat(Ka).copyTo(K.getMat());
       }
 
     }
@@ -178,7 +201,7 @@ namespace cv
 
   void
   reconstruct(InputArrayOfArrays points2d, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts, InputOutputArray K,
-              OutputArray points3d, bool is_projective, bool has_outliers, bool is_sequence)
+              OutputArray points3d, bool is_projective, bool has_outliers)
   {
     const int nviews = points2d.total();
     CV_Assert( nviews >= 2 );
@@ -191,92 +214,150 @@ namespace cv
     Matx33d Ka, R;
     Vec3d t;
 
-    if (nviews == 2)
+
+    // Projective reconstruction
+
+    if (is_projective)
     {
-      std::vector < Mat > Ps_estimated;
-      reconstruct(points2d, Ps_estimated, points3d, is_projective, has_outliers, is_sequence);
 
-      const int nviews_est = Ps_estimated.size();
-      Rs.create(nviews_est, 1, depth);
-      Ts.create(nviews_est, 1, depth);
-
-      for(unsigned int i = 0; i < nviews_est; ++i)
+      // Remove outliers
+      if (has_outliers)
       {
-        KRt_From_P(Ps_estimated[i], Ka, R, t);
-        Mat(R).copyTo(Rs.getMatRef(i));
-        Mat(t).copyTo(Ts.getMatRef(i));
-      }
-      Mat(Ka).copyTo(K.getMat());
-    }
-    else if (nviews > 2)
-    {
-      Ka = K.getMat();
-      CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
+        // TODO: check if it works
 
-      reconstruct_(pts2d, Rs, Ts, K, points3d);
+        for (int i = 1; i < nviews; ++i)
+        {
+          Matx33d F;
+          vector<int> inliers;
+          double max_error = 0.1;
+          Mat pts2d_left = pts2d[i-1], pts2d_right = pts2d[i];
+          fundamentalFromCorrespondences8PointRobust(pts2d_left, pts2d_right, max_error, F, inliers);
+
+          // outliers extraction
+          for (int i = 0; i < inliers.size(); ++i)
+          {
+            if (!inliers[i])
+              pts2d[i-1].at<Mat>(0,i) = Mat(1,2,depth,-1);
+          }
+
+        }
+
+      }
+
+      if (nviews == 2)
+      {
+        std::vector < Mat > Ps_estimated;
+        reconstruct(points2d, Ps_estimated, points3d, K, is_projective, has_outliers);
+
+        const int nviews_est = Ps_estimated.size();
+        Rs.create(nviews_est, 1, depth);
+        Ts.create(nviews_est, 1, depth);
+
+        for(unsigned int i = 0; i < nviews_est; ++i)
+        {
+          KRt_From_P(Ps_estimated[i], Ka, R, t);
+          Mat(R).copyTo(Rs.getMatRef(i));
+          Mat(t).copyTo(Ts.getMatRef(i));
+        }
+        Mat(Ka).copyTo(K.getMat());
+      }
+      else if (nviews > 2)
+      {
+        Ka = K.getMat();
+        CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
+
+        reconstruct_(pts2d, Rs, Ts, K, points3d);
+      }
+
+
+    }
+
+
+    // Affine reconstruction
+
+    else
+    {
+
+      // Two view reconstruction
+
+      if (nviews == 2)
+      {
+
+      }
+      else
+      {
+
+      }
+
     }
 
   }
 
 
   void
-  reconstruct(const std::vector<string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d, InputOutputArray K)
+  reconstruct(const std::vector<std::string> images, OutputArrayOfArrays projection_matrices, OutputArray points3d,
+              InputOutputArray K, bool is_projective, bool has_outliers)
   {
     Matx33d Ka = K.getMat();
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
     CV_Assert( images.size() >= (unsigned)2 );
 
-    std::vector<Mat> Rs, Ts;
-    reconstruct(images, Rs, Ts, Ka, points3d, false);
+    // Projective reconstruction
 
-    // From Rs and Ts, extract Ps
-
-    const int nviews = Rs.size();
-    const int depth = Mat(Ka).depth();
-    projection_matrices.create(nviews, 1, depth);
-
-    Matx34d P;
-    for (size_t i = 0; i < nviews; ++i)
+    if ( is_projective )
     {
-      P_From_KRt(Ka, Rs[i], Vec3d(Ts[i]), P);
-      Mat(P).copyTo(projection_matrices.getMatRef(i));
+      std::vector<Mat> Rs, Ts;
+      reconstruct(images, Rs, Ts, Ka, points3d, is_projective, has_outliers);
+
+      // From Rs and Ts, extract Ps
+
+      const int nviews = Rs.size();
+      const int depth = Mat(Ka).depth();
+      projection_matrices.create(nviews, 1, depth);
+
+      Matx34d P;
+      for (size_t i = 0; i < nviews; ++i)
+      {
+        P_From_KRt(Ka, Rs[i], Vec3d(Ts[i]), P);
+        Mat(P).copyTo(projection_matrices.getMatRef(i));
+      }
+
+      Mat(Ka).copyTo(K.getMat());
+      }
+
+
+    // Affine reconstruction
+
+    else
+    {
+
     }
 
-    Mat(Ka).copyTo(K.getMat());
   }
 
 
   void
   reconstruct(const std::vector<std::string> images, OutputArrayOfArrays Rs, OutputArrayOfArrays Ts,
-              InputOutputArray K, OutputArray points3d, bool is_projective)
+              InputOutputArray K, OutputArray points3d, bool is_projective, bool has_outliers)
   {
     Matx33d Ka = K.getMat();
     CV_Assert( Ka(0,0) > 0 && Ka(1,1) > 0);
     CV_Assert( images.size() >= (unsigned)2 );
 
+
+    // Projective reconstruction
+
     if ( is_projective )
     {
-//      std::vector < Mat > Ps_estimated;
-//      reconstruct(images, Ps_estimated, points3d, Ka);
-//
-//      const int depth = K.getMat().depth();
-//      const unsigned nviews = Ps_estimated.size();
-//
-//      Rs.create(nviews, 1, depth);
-//      Ts.create(nviews, 1, depth);
-//
-//      Matx33d R; Vec3d t;
-//      for(unsigned int i = 0; i < nviews; ++i)
-//      {
-//        KRt_From_P(Ps_estimated[i], Ka, R, t);
-//        Mat(R).copyTo(Rs.getMatRef(i));
-//        Mat(t).copyTo(Ts.getMatRef(i));
-//      }
-
+      reconstruct_(images, Rs, Ts, K, points3d);
     }
+
+
+    // Affine reconstruction
+
     else
     {
-      reconstruct_(images, Rs, Ts, K, points3d);
+
     }
 
   }

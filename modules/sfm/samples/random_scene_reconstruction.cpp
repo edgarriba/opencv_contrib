@@ -72,8 +72,7 @@ int main(int argc, char* argv[])
   std::vector<cv::Mat> Rs_est, ts_est;
   Mat_<double> points3d_estimated;
   const bool has_outliers = false;
-  const bool is_sequence = true;
-  reconstruct(points2d, Rs_est, ts_est, K_, points3d_estimated, is_projective, has_outliers, is_sequence);
+  reconstruct(points2d, Rs_est, ts_est, K_, points3d_estimated, is_projective, has_outliers);
 
 
   // Print output

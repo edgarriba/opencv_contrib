@@ -1,0 +1,3 @@
+/home/eriba/Downloads/sagradaFamilia_dataset/resized_IMG_2889.jpg
+/home/eriba/Downloads/sagradaFamilia_dataset/resized_IMG_2890.jpg
+/home/eriba/Downloads/sagradaFamilia_dataset/resized_IMG_2891.jpg

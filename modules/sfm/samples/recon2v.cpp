@@ -84,10 +84,11 @@ int main(int argc, char** argv)
 	std::vector < Mat_<double> > points2d;
 	points2d.push_back(x1);
 	points2d.push_back(x2);
+	Matx33d K_estimated;
 	Mat_<double> points3d_estimated;
 	std::vector < cv::Mat > Ps_estimated;
 
-	reconstruct(points2d, Ps_estimated, points3d_estimated, is_projective, has_outliers);
+	reconstruct(points2d, Ps_estimated, points3d_estimated, K_estimated, is_projective, has_outliers);
 
 
 	// Print output
