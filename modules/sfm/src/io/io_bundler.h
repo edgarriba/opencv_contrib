@@ -1,6 +1,8 @@
 /*
  Based on TheiaSfM library.
- Adapted Edgar Riba <edgar.riba@gmail.com>
+ https://github.com/sweeneychris/TheiaSfM/blob/master/src/theia/io/read_bundler_files.cc
+
+ Adapted by Edgar Riba <edgar.riba@gmail.com>
 
 */
 
@@ -58,6 +60,8 @@ bool readBundlerFile(const std::string &file,
     return false;
   }
 
+  const cv::Matx33d bundler_to_opencv(1, 0, 0, 0, -1, 0, 0, 0, -1);
+
   std::string header_string;
   std::getline(ifs, header_string);
 
@@ -80,9 +84,9 @@ bool readBundlerFile(const std::string &file,
     p = internal_params.c_str();
     const double focal_length = strtod(p, &p2);
     p = p2;
-    const double k1 = strtod(p, &p2);
+    //const double k1 = strtod(p, &p2);
     p = p2;
-    const double k2 = strtod(p, &p2);
+    //const double k2 = strtod(p, &p2);
     p = p2;
 
     cv::Matx33d intrinsics;
@@ -102,8 +106,6 @@ bool readBundlerFile(const std::string &file,
       }
     }
 
-    Rs.push_back(rotation);
-
     std::string translation_string;
     std::getline(ifs, translation_string);
     p = translation_string.c_str();
@@ -112,6 +114,14 @@ bool readBundlerFile(const std::string &file,
       translation(j) = strtod(p, &p2);
       p = p2;
     }
+
+    rotation = bundler_to_opencv * rotation;
+    translation =  bundler_to_opencv * translation;
+
+    cv::Matx33d rotation_t = rotation.t();
+    translation = -1.0 * rotation_t * translation;
+
+    Rs.push_back(rotation);
     Ts.push_back(translation);
 
     if ((i + 1) % 100 == 0 || i == num_cameras - 1) {
@@ -154,14 +164,14 @@ bool readBundlerFile(const std::string &file,
     // Reserve the view list for this 3D point.
     for (int j = 0; j < num_views; j++) {
       // Camera key x y
-      const int camera_index = strtol(p, &p2, 10);
+      //const int camera_index = strtol(p, &p2, 10);
       p = p2;
       // Returns the index of the sift descriptor in the camera for this track.
       strtol(p, &p2, 10);
       p = p2;
-      const float x_pos = strtof(p, &p2);
+      //const float x_pos = strtof(p, &p2);
       p = p2;
-      const float y_pos = strtof(p, &p2);
+      //const float y_pos = strtof(p, &p2);
       p = p2;
 
     }

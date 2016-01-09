@@ -68,7 +68,7 @@ enum {
   @param Ts Output vector of 3x1 translations of the camera.
   @param Ks Output vector of 3x3 instrinsics of the camera.
   @param points3d Output array with 3d points. Is 3 x N.
-  @param file_format The format of the file the import.
+  @param file_format The format of the file to import.
 
   The function supports reconstructions from Bundler.
 */

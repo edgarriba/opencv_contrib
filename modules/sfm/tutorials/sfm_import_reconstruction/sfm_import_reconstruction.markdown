@@ -6,7 +6,7 @@ Goal
 
 In this tutorial you will learn how to import a reconstruction from a given file obtained with Bundler [1]:
 
--   Load a file with a set of cameras and 3D points.
+-   Load a file containing a set of cameras and 3D points.
 -   Show obtained results using Viz.
 
 
@@ -18,7 +18,7 @@ Code
 Results
 -------
 
-The following picture shows the obtained scene reconstruction using [2]:
+The following picture shows a reconstruction from la *Sagrada Familia* (BCN) using dataset [2].
 
 ![](pics/import_sagrada_familia.png)
 
