@@ -119,7 +119,7 @@ void BOLD_Impl::compute(InputArray _image,
   if (img.empty()) return;
 
   // allocate array
-  const int m_descriptor_size = static_cast<int>(DIMS);
+  const int m_descriptor_size = static_cast<int>(DIMS/8);
   const int num_kpts = static_cast<int>(keypoints.size());
   _descriptors.create(num_kpts, m_descriptor_size, CV_8U);
 
