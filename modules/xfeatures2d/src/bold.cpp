@@ -60,6 +60,7 @@ private:
 /* load tests and init 2 rotations
    for fast affine aprox. (example -20,20) */
 BOLD_Impl::BOLD_Impl(void) {
+    // TODO: use new insead of malloc
     bin_tests = (int**) malloc(NROTS * sizeof(int *));
     for (int i = 0; i < NROTS; i++) {
         bin_tests[i] = (int*)malloc(NTESTS*2 * sizeof(int));
@@ -98,6 +99,7 @@ BOLD_Impl::BOLD_Impl(void) {
 // destructor
 BOLD_Impl::~BOLD_Impl(void)
 {
+  // TODO: use delete[] instead of free
   /* free the tests */
   for (int i = 0; i < NROTS; i++) {
       free(bin_tests[i]);
@@ -135,6 +137,7 @@ void BOLD_Impl::compute(InputArray _image,
       // TODO: check patch size, by now set to 1
       rectifyPatch(img, keypoints[i], 1, tmp_patch);
       // compute descriptor
+      // TODO: check if its copied to descriptors array
       desc = descriptors.row(i);
       mask = masks.row(i);
       compute_patch(tmp_patch, desc, mask);
