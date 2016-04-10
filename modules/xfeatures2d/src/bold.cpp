@@ -1,6 +1,7 @@
 #include "precomp.hpp"
 #include <fstream>
 
+// constants
 #define NTESTS 768
 #define DIMS 512
 #define NROTS 3
@@ -32,14 +33,25 @@ public:
                          OutputArray descriptors);
 
 private:
-    void compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks);
-    int hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb);
-    int hampop(uchar *a,uchar *b);
+
+    /*
+     * BOLD functions
+     */
+
+    inline void compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks);
+    inline int hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb);
+    inline int hampop(uchar *a,uchar *b);
+
+    /*
+     * BOLD arrays
+     */
 
     int **bin_tests;
     int rotations[2];
-};
 
+};  // END BOLD_Impl CLASS
+
+// constructor
 /* load tests and init 2 rotations
    for fast affine aprox. (example -20,20) */
 BOLD_Impl::BOLD_Impl(void)
@@ -79,6 +91,7 @@ BOLD_Impl::BOLD_Impl(void)
   }
 }
 
+// destructor
 BOLD_Impl::~BOLD_Impl(void)
 {
   /* free the tests */
@@ -96,7 +109,10 @@ void BOLD_Impl::compute( InputArray _image, std::vector<KeyPoint>& keypoints, Ou
 {
 }
 
-void BOLD_Impl::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
+// -------------------------------------------------
+/* BOLD computation routines */
+
+inline void BOLD_Impl::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
 {
   /* init cv mats */
   int nkeypoints = 1;
@@ -152,7 +168,7 @@ void BOLD_Impl::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
 }
 
 /* masked distance  */
-int BOLD_Impl::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
+inline int BOLD_Impl::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
 {
   int distL = 0;
   int distR = 0;
@@ -174,7 +190,7 @@ int BOLD_Impl::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
 }
 
 /* hamming distance  */
-int BOLD_Impl::hampop(uchar *a,uchar *b)
+inline int BOLD_Impl::hampop(uchar *a,uchar *b)
 {
   int distL = 0;
   for (int i = 0; i < 64; i++) {
