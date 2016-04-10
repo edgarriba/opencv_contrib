@@ -1,10 +1,48 @@
-#include "bold.hpp"
-#include <opencv2/opencv.hpp>
+#include "precomp.hpp"
 #include <fstream>
+
+#define NTESTS 768
+#define DIMS 512
+#define NROTS 3
+
+namespace cv
+{
+namespace xfeatures2d
+{
+
+/*
+ !BOLD implementation
+ */
+class BOLD_Impl : public BOLD
+{
+public:
+    /** Constructor
+     */
+    explicit BOLD_Impl();
+
+    virtual ~BOLD_Impl();
+
+    /**
+     * @param image image to extract descriptors
+     * @param keypoints of interest within image
+     * @param descriptors resulted descriptors array
+     */
+    virtual void compute(InputArray image,
+                         std::vector<KeyPoint>& keypoints,
+                         OutputArray descriptors);
+
+private:
+    void compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks);
+    int hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb);
+    int hampop(uchar *a,uchar *b);
+
+    int **bin_tests;
+    int rotations[2];
+};
 
 /* load tests and init 2 rotations
    for fast affine aprox. (example -20,20) */
-BOLD::BOLD(void)
+BOLD_Impl::BOLD_Impl(void)
 {
   bin_tests = (int**) malloc(NROTS * sizeof(int *));
   for (int i = 0; i < NROTS; i++){
@@ -16,9 +54,9 @@ BOLD::BOLD(void)
   for(int j = 0; j < NTESTS*2; j++ )
     {
       file >> bin_tests[0][j];
-    }	
+    }
   file.close();
-  rotations[0] = 20; 
+  rotations[0] = 20;
   rotations[1] = -20;
   /* compute the rotations offline */
   for (int i = 0; i < NTESTS*2; i+=2) {
@@ -37,11 +75,11 @@ BOLD::BOLD(void)
       int roty2 = (x2-15)*sa + (y2-15)*ca + 16;
       bin_tests[a][i] = rotx1 + 32*roty1;
       bin_tests[a][i+1] = rotx2 + 32*roty2;
-    }    
+    }
   }
 }
 
-BOLD::~BOLD(void)
+BOLD_Impl::~BOLD_Impl(void)
 {
   /* free the tests */
   for (int i = 0; i < NROTS; i++){
@@ -50,19 +88,27 @@ BOLD::~BOLD(void)
   free(bin_tests);
 }
 
-void BOLD::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks) 
+// -------------------------------------------------
+/* BOLD interface implementation */
+
+// keypoint scope
+void BOLD_Impl::compute( InputArray _image, std::vector<KeyPoint>& keypoints, OutputArray _descriptors )
+{
+}
+
+void BOLD_Impl::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
 {
   /* init cv mats */
   int nkeypoints = 1;
   descr.create(nkeypoints, DIMS/8, CV_8U);
   masks.create(nkeypoints, DIMS/8, CV_8U);
 
-  /* apply box filter */  
+  /* apply box filter */
   cv::Mat patch;
   boxFilter(img, patch, img.depth(), cv::Size(5,5),
 	    cv::Point(-1,-1), true, cv::BORDER_REFLECT);
 
-  /* get test and mask results  */    
+  /* get test and mask results  */
   int k =0;
   uchar* dsc = descr.ptr<uchar>(k);
   uchar* msk = masks.ptr<uchar>(k);
@@ -79,7 +125,7 @@ void BOLD::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
   for (int i = 0; i < DIMS; i++,j+=2){
     bit = i%8;
     int temp_var=0;
-    tdes = (smoothed[tests[j]] < smoothed[tests[j+1]]);    
+    tdes = (smoothed[tests[j]] < smoothed[tests[j+1]]);
     temp_var += (smoothed[r0[j]] < smoothed[r0[j+1]])^tdes;
     temp_var += (smoothed[r1[j]] < smoothed[r1[j+1]])^tdes;
     /* tvar-> 0 not stable --------  tvar-> 1 stable */
@@ -88,7 +134,7 @@ void BOLD::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
       {
 	val = tdes;
 	var = tvar;
-      } 
+      }
     else
       {
 	val |= tdes << bit;
@@ -105,8 +151,8 @@ void BOLD::compute_patch(cv::Mat img, cv::Mat& descr,cv::Mat& masks)
   }
 }
 
-/* masked distance  */  
-int BOLD::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
+/* masked distance  */
+int BOLD_Impl::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
 {
   int distL = 0;
   int distR = 0;
@@ -117,9 +163,9 @@ int BOLD::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
     int xormaskedL = axorb & ma[i]  ;
     int xormaskedR = axorb & mb[i]  ;
     nL += ma[i];
-    nR += mb[i];    
-    distL += __builtin_popcount(xormaskedL);    
-    distR += __builtin_popcount(xormaskedR);    
+    nR += mb[i];
+    distL += __builtin_popcount(xormaskedL);
+    distR += __builtin_popcount(xormaskedR);
   }
   float n = nL + nR;
   float wL = nL / n;
@@ -127,13 +173,21 @@ int BOLD::hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb)
   return distL*wL + distR*wR;
 }
 
-/* hamming distance  */  
-int BOLD::hampop(uchar *a,uchar *b)
+/* hamming distance  */
+int BOLD_Impl::hampop(uchar *a,uchar *b)
 {
   int distL = 0;
   for (int i = 0; i < 64; i++) {
     int axorb = a[i] ^ b[i];
-    distL += __builtin_popcount(axorb);    
+    distL += __builtin_popcount(axorb);
   }
   return distL;
 }
+
+Ptr<BOLD> BOLD::create() {
+    return makePtr<BOLD_Impl>();
+}
+
+
+} // END NAMESPACE XFEATURES2D
+} // END NAMESPACE CV
