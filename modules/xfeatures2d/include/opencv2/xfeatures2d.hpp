@@ -64,6 +64,17 @@ namespace xfeatures2d
 //! @addtogroup xfeatures2d_experiment
 //! @{
 
+/** @brief Class implementing the BOLD (*Binary Online Learned Descriptor*) keypoint descriptor, describred in @cite #?# .
+
+The algorithm propose ...
+
+*/
+class CV_EXPORTS_W BOLD : public Feature2D
+{
+public:
+    CV_WRAP static Ptr<BOLD> create();
+};
+
 /** @brief Class implementing the FREAK (*Fast Retina Keypoint*) keypoint descriptor, described in @cite AOV12 .
 
 The algorithm propose a novel keypoint descriptor inspired by the human visual system and more
