@@ -1,6 +1,8 @@
 #include "precomp.hpp"
 #include <fstream>
 
+#include <iostream>
+
 // constants
 #define NTESTS 768
 #define DIMS 512
@@ -14,9 +16,8 @@ namespace xfeatures2d
 /*
  !BOLD implementation
  */
-class BOLD_Impl : public BOLD
-{
-public:
+class BOLD_Impl : public BOLD {
+ public:
     /** Constructor
      */
     explicit BOLD_Impl();
@@ -32,8 +33,7 @@ public:
                          std::vector<KeyPoint>& keypoints,
                          OutputArray descriptors);
 
-private:
-
+ private:
     /*
      * BOLD functions
      */
@@ -44,8 +44,8 @@ private:
     inline void compute_patch(const Mat& img,
                               Mat& descr, Mat& masks);
 
-    inline int hampopmaskedLR(uchar *a,uchar *ma,uchar *b,uchar *mb);
-    inline int hampop(uchar *a,uchar *b);
+    inline int hampopmaskedLR(uchar* a, uchar* ma, uchar* b, uchar* mb);
+    inline int hampop(uchar* a, uchar* b);
 
     /*
      * BOLD arrays
@@ -62,19 +62,24 @@ private:
 BOLD_Impl::BOLD_Impl(void) {
     // TODO: use new insead of malloc
     bin_tests = (int**) malloc(NROTS * sizeof(int *));
+
     for (int i = 0; i < NROTS; i++) {
         bin_tests[i] = (int*)malloc(NTESTS*2 * sizeof(int));
     }
+
     // TODO: check if this can be hardcoded
     std::ifstream file;
     file.open("bold.descr");
+
     /* read original tests and set them to rotation 0 */
     for (int j = 0; j < NTESTS*2; j++) {
         file >> bin_tests[0][j];
     }
+
     file.close();
     rotations[0] = 20;
     rotations[1] = -20;
+
     /* compute the rotations offline */
     for (int i = 0; i < NTESTS*2; i+=2) {
         int x1 = bin_tests[0][i] % 32;
@@ -114,34 +119,36 @@ BOLD_Impl::~BOLD_Impl(void)
 void BOLD_Impl::compute(InputArray _image,
                         std::vector<KeyPoint>& keypoints,
                         OutputArray _descriptors) {
-  // do nothing if no image
-  const Mat img = _image.getMat();
-  if (img.empty()) return;
+    // do nothing if no image
+    const Mat img = _image.getMat();
+    if (img.empty()) return;
 
-  // allocate array
-  const int m_descriptor_size = static_cast<int>(DIMS/8);
-  const int num_kpts = static_cast<int>(keypoints.size());
-  _descriptors.create(num_kpts, m_descriptor_size, CV_8U);
+    // allocate array
+    const int m_descriptor_size = static_cast<int>(DIMS/8);
+    const int num_kpts = static_cast<int>(keypoints.size());
+    _descriptors.create(num_kpts, m_descriptor_size, CV_8U);
 
-  // prepare descriptors
-  Mat descriptors = _descriptors.getMat();
-  descriptors.setTo(Scalar(0));
+    // prepare descriptors
+    Mat descriptors = _descriptors.getMat();
+    descriptors.setTo(Scalar(0));
 
-  // prepare masks
-  // TODO: let's see how to interface that
-  Mat masks = descriptors.clone();
+    // prepare masks
+    // TODO: let's see how to interface that
+    Mat masks = descriptors.clone();
 
-  Mat tmp_patch, desc, mask;
-  for (int i = 0; i < num_kpts; ++i) {
-      // extract patch
-      // TODO: check patch size, by now set to 1
-      rectifyPatch(img, keypoints[i], 1, tmp_patch);
-      // compute descriptor
-      // TODO: check if its copied to descriptors array
-      desc = descriptors.row(i);
-      mask = masks.row(i);
-      compute_patch(tmp_patch, desc, mask);
-  }
+    Mat tmp_patch, desc, mask;
+    for (int i = 0; i < num_kpts; ++i) {
+        // extract patch
+        // TODO: check patch size, by now set to 1
+        rectifyPatch(img, keypoints[i], 32, tmp_patch);
+
+        // compute descriptor
+        // TODO: check if its copied to descriptors array
+        desc = descriptors.row(i);
+        mask = masks.row(i);
+
+        compute_patch(tmp_patch, desc, mask);
+    }
 }
 
 // -------------------------------------------------
@@ -158,61 +165,62 @@ inline void BOLD_Impl::rectifyPatch(const Mat& image,
 
     float M_[] = {
         s*cosine, -s*sine,   (-s*cosine + s*sine  ) * patchSize/2.0f + kp.pt.x,
-        s*sine,   s*cosine,  (-s*sine   - s*cosine) * patchSize/2.0f + kp.pt.y
+        s*sine,    s*cosine, (-s*sine   - s*cosine) * patchSize/2.0f + kp.pt.y
     };
 
-    warpAffine(image, patch, Mat(2,3,CV_32FC1,M_), Size(patchSize, patchSize),
-              WARP_INVERSE_MAP + INTER_CUBIC + WARP_FILL_OUTLIERS);
+    warpAffine(image, patch, Mat(2,3,CV_32FC1,M_), Size(patchSize,patchSize),
+               WARP_INVERSE_MAP + INTER_CUBIC + WARP_FILL_OUTLIERS);
 }
 
-inline void BOLD_Impl::compute_patch(const Mat& patch, Mat& descr, Mat& masks) {
-  /* init cv mats */
-  /*int nkeypoints = 1;
-  descr.create(nkeypoints, DIMS/8, CV_8U);
-  masks.create(nkeypoints, DIMS/8, CV_8U);*/
+inline void BOLD_Impl::compute_patch(const Mat& img,
+                                     Mat& descr, Mat& masks) {
+    /* init cv mats */
+    /*int nkeypoints = 1;
+    descr.create(nkeypoints, DIMS/8, CV_8U);
+    masks.create(nkeypoints, DIMS/8, CV_8U);*/
 
-  /* apply box filter */
-  /*cv::Mat patch;
-  boxFilter(img, patch, img.depth(), cv::Size(5,5),
-	    cv::Point(-1,-1), true, cv::BORDER_REFLECT);*/
+    /* apply box filter */
+    cv::Mat patch;
+    boxFilter(img, patch, img.depth(), cv::Size(5,5),
+              cv::Point(-1,-1), true, cv::BORDER_REFLECT);
 
-  /* get test and mask results  */
-  int k = 0;
-  uchar* dsc = descr.ptr<uchar>(k);
-  uchar* msk = masks.ptr<uchar>(k);
-  uchar *smoothed = patch.data;
-  int* tests = bin_tests[0];
-  int* r0 = bin_tests[1];
-  int* r1 = bin_tests[2];
-  unsigned int val = 0;
-  unsigned int var = 0;
-  int idx = 0;
-  int j = 0;
-  int bit;
-  int tdes,tvar;
-  for (int i = 0; i < DIMS; i++, j+=2) {
-      bit = i % 8;
-      int temp_var = 0;
-      tdes = (smoothed[tests[j]] < smoothed[tests[j+1]]);
-      temp_var += (smoothed[r0[j]] < smoothed[r0[j+1]])^tdes;
-      temp_var += (smoothed[r1[j]] < smoothed[r1[j+1]])^tdes;
-      /* tvar-> 0 not stable --------  tvar-> 1 stable */
-      tvar = (temp_var == 0);
-      if (bit==0) {
-          val = tdes;
-          var = tvar;
-      } else {
-          val |= tdes << bit;
-          var |= tvar << bit;
-      }
-      if (bit==7) {
-          dsc[idx] = val;
-          msk[idx] = var;
-          val = 0;
-          var = 0;
-          idx++;
-      }
-  }
+    /* get test and mask results  */
+    int k = 0;
+    uchar* dsc = descr.ptr<uchar>(k);
+    uchar* msk = masks.ptr<uchar>(k);
+    uchar* smoothed = patch.data;
+    int* tests = bin_tests[0];
+    int* r0 = bin_tests[1];
+    int* r1 = bin_tests[2];
+    unsigned int val = 0;
+    unsigned int var = 0;
+    int idx = 0;
+    int j = 0;
+    int bit;
+    int tdes,tvar;
+    for (int i = 0; i < DIMS; i++, j+=2) {
+        bit = i % 8;
+        int temp_var = 0;
+        tdes = (smoothed[tests[j]] < smoothed[tests[j+1]]);
+        temp_var += (smoothed[r0[j]] < smoothed[r0[j+1]])^tdes;
+        temp_var += (smoothed[r1[j]] < smoothed[r1[j+1]])^tdes;
+        /* tvar-> 0 not stable --------  tvar-> 1 stable */
+        tvar = (temp_var == 0);
+        if (bit==0) {
+            val = tdes;
+            var = tvar;
+        } else {
+            val |= tdes << bit;
+            var |= tvar << bit;
+        }
+        if (bit==7) {
+            dsc[idx] = val;
+            msk[idx] = var;
+            val = 0;
+            var = 0;
+            idx++;
+        }
+    }
 }
 
 /* masked distance  */
@@ -249,7 +257,6 @@ inline int BOLD_Impl::hampop(uchar *a,uchar *b) {
 Ptr<BOLD> BOLD::create() {
     return makePtr<BOLD_Impl>();
 }
-
 
 } // END NAMESPACE XFEATURES2D
 } // END NAMESPACE CV

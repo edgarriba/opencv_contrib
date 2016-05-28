@@ -1046,7 +1046,12 @@ TEST( Features2d_DescriptorExtractor_LATCH, regression )
     test.safe_run();
 }
 
-
+TEST( Features2d_DescriptorExtractor_BOLD, regression )
+{
+    CV_DescriptorExtractorTest<Hamming> test( "descriptor-bold",  1,
+                                             BOLD::create() );
+    test.safe_run();
+}
 
 /*#if CV_SSE2
 TEST( Features2d_DescriptorExtractor_Calonder_uchar, regression )
